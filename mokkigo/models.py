@@ -1,10 +1,9 @@
 import click
+
 from flask.cli import with_appcontext
 from . import db
-from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
 
-
-Base = declarative_base()
 
 # Association table used to enable to map participants to multiple visits
 visitors = db.Table(
@@ -27,8 +26,41 @@ class Visit(db.Model):
     time_start = db.Column(db.String(128), nullable=False)
     time_end = db.Column(db.String(128), nullable=False)
     mokki_name = db.Column(db.String(128), nullable=False)
-
     participants = db.relationship("Participant", secondary=visitors)
+
+    def json_schema():
+        schema = {
+                "type": "object",
+                "required": ["mokki_name", "time_start", "time_end"]
+        }
+        props = schema["properties"] = {}
+        props["mokki_name"] = {
+                "description": "Name of the mokki",
+                "type": "string"
+        }
+        props["time_start"] = {
+                "description": "Start date of the visit w/ date-time format",
+                "type": "string",
+                "format": "date-time"
+        }
+        props["time_end"] = {
+                "description": "End date of the visit w/ date-time format",
+                "type": "string",
+                "format": "date-time"
+        }
+        return schema
+
+    def serialize(self):
+        return {
+                "mokki_name": self.mokki_name,
+                "time_start": self.time_start.isoformat(),
+                "time_end": self.time_end.isoformat()
+        }
+
+    def deserialize(self, doc):
+        self.mokki_name = doc["mokki_name"]
+        self.time_start = datetime.datefromisoformat(doc["time_start"])
+        self.time_end = datetime.datefromisoformat(doc["time_end"])
 
 
 class Mokki(db.Model):
@@ -43,6 +75,32 @@ class Mokki(db.Model):
     name = db.Column(db.String(128), nullable=False, unique=True)
     location = db.Column(db.String(128), nullable=False)
     shoppinglist = db.relationship("Item",)
+
+    def json_schema():
+        schema = {
+                "type": "object",
+                "required": ["name", "location"]
+        }
+        props = schema["properties"] = {}
+        props["name"] = {
+                "description": "Name of the mokki",
+                "type": "string"
+        }
+        props["location"] = {
+                "description": "Location of the mokki",
+                "type": "string"
+        }
+        return schema
+
+    def serialize(self):
+        return {
+                "name": self.name,
+                "amount": self.amount
+        }
+
+    def deserialize(self, doc):
+        self.name = doc["name"]
+        self.location = doc["location"]
 
 
 class Participant(db.Model):
@@ -62,6 +120,28 @@ class Participant(db.Model):
     allergies = db.Column(db.String(128))
     visit_id = db.Column(db.Integer, db.ForeignKey("visit.id"), unique=True)
 
+    def json_schema():
+        schema = {
+                "type": "object",
+                "required": "name"
+        }
+        props = schema["properties"] = {}
+        props["name"] = {
+                "description": "Name of the participant",
+                "type": "string",
+        }
+        return schema
+
+    def serialize(self):
+        return {
+                "name": self.name,
+                "allergies": self.allergies
+        }
+
+    def deserialize(self, doc):
+        self.name = doc["name"]
+        self.allergies = doc["allergies"]
+
 
 class Item(db.Model):
     """
@@ -73,6 +153,32 @@ class Item(db.Model):
     mokki = db.relationship("Mokki", back_populates="shoppinglist")
     mokki_id = db.Column(db.Integer, db.ForeignKey("mokki.id"))
     amount = db.Column(db.String(64), nullable=False)
+
+    def json_schema():
+        schema = {
+                "type": "object",
+                "required": ["name", "amount"]
+        }
+        props = schema["properties"] = {}
+        props["name"] = {
+                "description": "Name of the item",
+                "type": "string"
+        }
+        props["amount"] = {
+                "description": "Needed amount of the item",
+                "type": "string"
+        }
+        return schema
+
+    def serialize(self):
+        return {
+                "name": self.name,
+                "amount": self.amount
+        }
+
+    def deserialize(self, doc):
+        self.name = doc["name"]
+        self.amount = doc["amount"]
 
 
 @click.command("init-db")
