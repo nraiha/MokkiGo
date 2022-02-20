@@ -28,6 +28,9 @@ export FLASK_ENV=development <br>
 flask run
 </p>
 
+# Running tests:
+pytest --cov-report term-missing --cov=mokkigo
+
 
 
 
