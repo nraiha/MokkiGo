@@ -53,6 +53,7 @@ class Participant(db.Model):
                     list of all the allergies in string format
                         - Needs some thinking
                             - parse json array?
+                            - just str?
     """
     __tablename__ = "participant"
 
@@ -65,9 +66,7 @@ class Participant(db.Model):
 class Item(db.Model):
     """
     name            String
-
-    TBD If amount is wanted maybe need to create new item instance every time
-        when new amount is picked for the item
+    amount          String
     """
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
