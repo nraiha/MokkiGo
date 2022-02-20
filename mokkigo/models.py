@@ -16,6 +16,7 @@ visitors = db.Table(
 class Visit(db.Model):
     """
     Visit table
+    visit_name       String
     time_start       String in format of date-time (ISO8601)
     time_end         String in format of date-time (ISO8601)
     mokki_name       String name reference to mokki where this visit occurred
@@ -23,6 +24,7 @@ class Visit(db.Model):
     """
     __tablename__ = "visit"
     id = db.Column(db.Integer, primary_key=True)
+    visit_name = db.Column(db.String(128), nullable=False, unique=True)
     time_start = db.Column(db.String(128), nullable=False)
     time_end = db.Column(db.String(128), nullable=False)
     mokki_name = db.Column(db.String(128), nullable=False)
@@ -31,9 +33,14 @@ class Visit(db.Model):
     def json_schema():
         schema = {
                 "type": "object",
-                "required": ["mokki_name", "time_start", "time_end"]
+                "required": ["visit_name", "mokki_name",
+                             "time_start", "time_end"]
         }
         props = schema["properties"] = {}
+        props["visit_name"] = {
+                "description": "Name of the visit",
+                "type": "string"
+        }
         props["mokki_name"] = {
                 "description": "Name of the mokki",
                 "type": "string"
@@ -52,12 +59,14 @@ class Visit(db.Model):
 
     def serialize(self):
         return {
+                "visit_name": self.visit_name,
                 "mokki_name": self.mokki_name,
                 "time_start": self.time_start.isoformat(),
                 "time_end": self.time_end.isoformat()
         }
 
     def deserialize(self, doc):
+        self.visit_name = doc["visit_name"]
         self.mokki_name = doc["mokki_name"]
         self.time_start = datetime.datefromisoformat(doc["time_start"])
         self.time_end = datetime.datefromisoformat(doc["time_end"])

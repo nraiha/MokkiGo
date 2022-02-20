@@ -40,6 +40,7 @@ def app():
 
 def _get_visit():
     return Visit(
+            visit_name="visiitti",
             time_start="1990-01-01",
             time_end="1990-01-08"
     )
