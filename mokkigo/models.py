@@ -73,6 +73,7 @@ class Item(db.Model):
     name = db.Column(db.String(64), nullable=False)
     mokki = db.relationship("Mokki", back_populates="shoppinglist")
     mokki_id = db.Column(db.Integer, db.ForeignKey("mokki.id"))
+    amount = db.Column(db.String(64), nullable=False)
 
 
 @click.command("init-db")

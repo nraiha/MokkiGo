@@ -60,7 +60,8 @@ def _get_participant():
 
 def _get_item():
     return Item(
-            name="test_item"
+            name="test_item",
+            amount="a lot",
         )
 
 
