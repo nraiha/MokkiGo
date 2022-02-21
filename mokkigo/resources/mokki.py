@@ -6,10 +6,10 @@ from flask_restful import Resource
 from jsonschema import validate, ValidationError
 
 from werkzeug.routing import BaseConverter
-from werkzeus.exceptions import NotFound
+from werkzeug.exceptions import NotFound
 
-from mokkigo import db, pai
-from mokkigo.module import Mokki
+from mokkigo import api
+from mokkigo.models import Mokki
 from mokkigo.constants import JSON
 
 
@@ -18,9 +18,10 @@ class MokkiCollection(Resource):
         pass
 
     def post(self):
-        content_type = request.mimetype
-        if content_type != JSON:
-            return Response("Unsupported Media Type", status=415)
+        pass
+        # content_type = request.mimetype
+        # if content_type != JSON:
+        #     return Response("Unsupported Media Type", status=415)
 
 
 class MokkiItem(Resource):

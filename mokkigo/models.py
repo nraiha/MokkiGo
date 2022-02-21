@@ -1,8 +1,18 @@
 import click
 
 from flask.cli import with_appcontext
-from . import db
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
 from datetime import datetime
+
+from mokkigo import db
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 # Association table used to enable to map participants to multiple visits

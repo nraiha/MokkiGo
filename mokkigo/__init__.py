@@ -2,10 +2,10 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
-from mokkigo.resources.item import ItemConverter
-from mokkigo.resources.visit import VisitConverter
-from mokkigo.resources.mokki import MokkiConverter
-from mokkigo.resources.participant import ParticipantConverter
+# from mokkigo.resources.item import ItemConverter
+# from mokkigo.resources.visit import VisitConverter
+# from mokkigo.resources.mokki import MokkiConverter
+# from mokkigo.resources.participant import ParticipantConverter
 
 db = SQLAlchemy()
 
@@ -34,15 +34,15 @@ def create_app(test_config=None):
 
     db.init_app(app)
 
-    from . import models
-    app.cli.add_command(models.init_db_command)
-
     from . import api
     app.register_blueprint(api.api_bp)
 
-    app.url_map_converters["item"] = ItemConverter
-    app.url_map_converters["mokki"] = MokkiConverter
-    app.url_map_converters["visit"] = VisitConverter
-    app.url_map_converters["participant"] = ParticipantConverter
+    from . import models
+    app.cli.add_command(models.init_db_command)
+
+    # app.url_map_converters["item"] = ItemConverter
+    # app.url_map_converters["mokki"] = MokkiConverter
+    # app.url_map_converters["visit"] = VisitConverter
+    # app.url_map_converters["participant"] = ParticipantConverter
 
     return app

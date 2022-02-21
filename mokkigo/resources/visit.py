@@ -6,10 +6,10 @@ from flask_restful import Resource
 from jsonschema import validate, ValidationError
 
 from werkzeug.routing import BaseConverter
-from werkzeus.exceptions import (NotFound)
+from werkzeug.exceptions import (NotFound)
 
 from mokkigo import db, api
-from mokkigo.module import Visit
+from mokkigo.models import Visit
 from mokkigo.constants import JSON
 
 
