@@ -8,58 +8,58 @@ from jsonschema import validate, ValidationError
 from werkzeug.routing import BaseConverter
 from werkzeug.exceptions import (NotFound)
 
-from mokkigo import db, api
+from mokkigo import db
 from mokkigo.models import Item, Mokki
 from mokkigo.constants import JSON
 
 
 class ItemCollection(Resource):
     def get(self, mokki):
-        pass
-        # db_mokki = Mokki.query.filter_by(name=mokki).first()
-        # if db_mokki is None:
-        #     raise NotFound
+        db_mokki = Mokki.query.filter_by(name=mokki).first()
+        if db_mokki is None:
+            raise NotFound
 
-        # remaining = Item.query.filter_by(mokki=db_mokki)
-        # body = {
-        #         "mokki": db_mokki.name,
-        #         "items": []
-        # }
+        remaining = Item.query.filter_by(mokki=db_mokki)
+        body = {
+                "mokki": db_mokki.name,
+                "items": []
+        }
 
-        # for item in remaining:
-        #     body["items"].append(
-        #             {
-        #                 "name": item.name,
-        #                 "amount": item.amount
-        #             }
-        #     )
-        # return Response(json.dumps(body), 200, mimetype=JSON)
+        for item in remaining:
+            body["items"].append(
+                    {
+                        "name": item.name,
+                        "amount": item.amount
+                    }
+            )
+        return Response(json.dumps(body), 200, mimetype=JSON)
 
     def post(self, mokki):
-        pass
-        # content_type = request.mimetype
-        # if content_type != JSON:
-        #     return Response("Unsupported Media Type", status=415)
+        content_type = request.mimetype
+        if content_type != JSON:
+            return Response("Unsupported Media Type", status=415)
 
-        # try:
-        #     validate(request.json, Item.json_schema())
-        # except ValidationError as e:
-        #     return Response(str(e), status=400)
+        try:
+            validate(request.json, Item.json_schema())
+        except ValidationError as e:
+            return Response(str(e), status=400)
 
-        # item = Item(
-        #         name=request.json["name"],
-        #         amount=request.json["amount"],
-        #         mokki=mokki
-        # )
-        # db.session.add(item)
-        # db.session.commit()
+        item = Item(
+                name=request.json["name"],
+                amount=request.json["amount"],
+                mokki=mokki
+        )
+        db.session.add(item)
+        db.session.commit()
 
-        # return Response(status=201,
-        #                 headers={
-        #                     "Location": api.url_for(ItemItem,
-        #                                             mokki=mokki,
-        #                                             item=item)
-        #                 })
+        from mokkigo import api
+
+        return Response(status=201,
+                        headers={
+                            "Location": api.url_for(ItemItem,
+                                                    mokki=mokki,
+                                                    item=item)
+                        })
 
 
 class ItemItem(Resource):

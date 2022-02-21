@@ -11,18 +11,13 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
 
 api.add_resource(MokkiCollection, "/mokkis/")
-# api.add_resource(MokkiItem, "/mokkis/<mokki:mokki>/")
-api.add_resource(MokkiItem, "/mokkis/<mokki>/")
+api.add_resource(MokkiItem, "/mokkis/<mokki:mokki>/")
 
-# api.add_resource(ItemCollection, "/mokkis/<mokki:mokki>/items/")
-# api.add_resource(ItemItem, "/mokkis/<mokki:mokki>/items/<item:item>/")
-api.add_resource(ItemCollection, "/mokkis/<mokki>/items/")
-api.add_resource(ItemItem, "/mokkis/<mokki>/items/<item>/")
+api.add_resource(ItemCollection, "/mokkis/<mokki:mokki>/items/")
+api.add_resource(ItemItem, "/mokkis/<mokki:mokki>/items/<item:item>/")
 
 api.add_resource(ParticipantCollection, "/participants/")
-# api.add_resource(ParticipantItem, "/participants/<participant:participant>/")
-api.add_resource(ParticipantItem, "/participants/participant/")
+api.add_resource(ParticipantItem, "/participants/<participant:participant>/")
 
 api.add_resource(VisitCollection, "/visits/")
-# api.add_resource(VisitItem, "/visits/<visit:visit>/")
-api.add_resource(VisitItem, "/visits/<visit>/")
+api.add_resource(VisitItem, "/visits/<visit:visit>/")

@@ -8,7 +8,7 @@ from jsonschema import validate, ValidationError
 from werkzeug.routing import BaseConverter
 from werkzeug.exceptions import (NotFound)
 
-from mokkigo import db, api
+from mokkigo import db
 from mokkigo.models import Item, Mokki
 from mokkigo.constants import JSON
 
