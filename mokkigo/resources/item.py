@@ -1,7 +1,9 @@
 import json
 
-from flask import request, Response
+from flask import request, Response, url_for
 from flask_restful import Resource
+
+from sqlalchemy.exc import IntegrityError
 
 from jsonschema import validate, ValidationError
 
@@ -68,11 +70,20 @@ class ItemCollection(Resource):
                 amount: 1.0
           responses:
             '200':
-              description:
+              description: Item was created successfully
+              headers:
+                Location:
+                  description: URI of the new Item
+                  schema:
+                    type: string
             '400':
-              description:
+              description: The request body was not valid
+            '404:
+              description: Mokki was not found
+            '409':
+              description: A item with the same name already exists
             '415':
-              description:
+              description: Wrong media type was used
         """
         content_type = request.mimetype
         if content_type != JSON:
@@ -88,22 +99,42 @@ class ItemCollection(Resource):
                 amount=request.json["amount"],
                 mokki=mokki
         )
-        db.session.add(item)
-        db.session.commit()
 
-        from mokkigo import api
+        href = url_for("api.itemitem", mokki=mokki, item=item)
+
+        try:
+            db.session.add(item)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return "Item '{}' already exists".format(item.name), 409
 
         return Response(status=201,
                         headers={
-                            "Location": api.url_for(ItemItem,
-                                                    mokki=mokki,
-                                                    item=item)
+                            "Location": href
                         })
 
 
 class ItemItem(Resource):
     def get(self, mokki, item):
-        pass
+        """
+        GET method for ItemItem
+        OpenAPI description below:
+        ---
+        description: Get details of one item
+        responses:
+          '200':
+            description: Data of a single item
+            content:
+              application/json:
+                examples:
+                  name: carrot
+                  amount: 3
+          '404':
+            description: Item not found
+        """
+        body = item.serialize()
+        return Response(json.dumps(body), 200, mimetype=JSON)
 
     def put(self, mokki, item):
         """
@@ -116,7 +147,8 @@ class ItemItem(Resource):
             schema:
               $ref: '#/components/schemas/Item'
             example:
-              'todo'
+              name: Pear
+              amount: 0
         responses:
           '204':
             description: The item's attributes were updated successfully
@@ -129,12 +161,46 @@ class ItemItem(Resource):
           '415':
             description: Wrong media type was used
         """
-        pass
+        content_type = request.mimetype
+        if content_type != JSON:
+            return Response("Unsupported Media Type", status=415)
+
+        try:
+            validate(request.json, Item.json_schema())
+        except ValidationError as e:
+            return Response(400, "Invalid JSON document", str(e))
+
+        item.deserialize(request.json)
+        try:
+            db.session.add(item)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return "Item '{}' already exists".format(item.name), 409
 
     def delete(self, mokki, item):
-        pass
+        """
+        DELETE method for ItemItem
+        OpenAPI description below:
+        ---
+        description: Delete selected item
+        responses:
+          '204':
+            description: Item deleted successfully
+          '404':
+            description: Item not found
+        """
+        db.session.delete(item)
+        db.session.commit()
+        return Response(status=204)
 
 
 class ItemConverter(BaseConverter):
     def to_url(self, item):
         return str(item.id)
+
+    def to_python(self, item_name):
+        db_i = Item.query.filter_by(name=item_name).first()
+        if db_i is None:
+            raise NotFound
+        return db_i

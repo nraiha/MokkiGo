@@ -8,17 +8,17 @@ from sqlalchemy.exc import IntegrityError
 from jsonschema import validate, ValidationError
 
 from werkzeug.routing import BaseConverter
-from werkzeug.exceptions import (NotFound, Conflict)
+from werkzeug.exceptions import NotFound
 
 from mokkigo import db
-from mokkigo.models import Item, Mokki, Participant
+from mokkigo.models import Participant
 from mokkigo.constants import JSON
 
 
 class ParticipantCollection(Resource):
     def get(self):
         """
-        GET for ItemCollection
+        GET for ParticipantCollection
         OpenAPI description below:
         ---
         description: Get the list of participants

@@ -114,7 +114,7 @@ class Mokki(db.Model):
     def serialize(self):
         return {
                 "name": self.name,
-                "amount": self.amount
+                "location": self.location
         }
 
     def deserialize(self, doc):
