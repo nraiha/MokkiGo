@@ -33,17 +33,14 @@ class ItemCollection(Resource):
                 - name: item2
                   amount: 5
         """
-
-        db_mokki = Mokki.query.filter_by(name=mokki).first()
+        db_mokki = Mokki.query.filter_by(name=mokki.name).first()
         if db_mokki is None:
             raise NotFound
-
         remaining = Item.query.filter_by(mokki=db_mokki)
         body = {
                 "mokki": db_mokki.name,
                 "items": []
         }
-
         for item in remaining:
             body["items"].append(
                     {
