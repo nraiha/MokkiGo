@@ -5,6 +5,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from datetime import datetime
 
+from dateutil import parser
+
 from mokkigo import db
 
 
@@ -35,9 +37,9 @@ class Visit(db.Model):
     __tablename__ = "visit"
     id = db.Column(db.Integer, primary_key=True)
     visit_name = db.Column(db.String(128), nullable=False, unique=True)
-    time_start = db.Column(db.String(128), nullable=False)
-    time_end = db.Column(db.String(128), nullable=False)
     mokki_name = db.Column(db.String(128), nullable=False)
+    time_start = db.Column(db.DateTime, nullable=False)
+    time_end = db.Column(db.DateTime, nullable=False)
     participants = db.relationship("Participant", secondary=visitors)
 
     def json_schema():
@@ -56,12 +58,12 @@ class Visit(db.Model):
                 "type": "string"
         }
         props["time_start"] = {
-                "description": "Start date of the visit w/ date-time format",
+                "description": "Start date of the visit with date-time format",
                 "type": "string",
                 "format": "date-time"
         }
         props["time_end"] = {
-                "description": "End date of the visit w/ date-time format",
+                "description": "End date of the visit with date-time format",
                 "type": "string",
                 "format": "date-time"
         }
@@ -78,8 +80,8 @@ class Visit(db.Model):
     def deserialize(self, doc):
         self.visit_name = doc["visit_name"]
         self.mokki_name = doc["mokki_name"]
-        self.time_start = datetime.datefromisoformat(doc["time_start"])
-        self.time_end = datetime.datefromisoformat(doc["time_end"])
+        self.time_start = parser.parse(doc["time_start"])
+        self.time_end = parser.parse(doc["time_end"])
 
 
 class Mokki(db.Model):
