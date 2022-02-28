@@ -37,10 +37,10 @@ for idx, letter in enumerate("ABC", start=1):
     db.session.add(p[0])
     db.session.add(p[1])
     db.session.add(p[2])
-    db.session.add(item[0])
-    db.session.add(item[1])
-    db.session.add(m)
-    db.session.add(v)
+    # db.session.add(item[0])
+    # db.session.add(item[1])
+    # db.session.add(m)
+    # db.session.add(v)
 
 db.session.commit()
 

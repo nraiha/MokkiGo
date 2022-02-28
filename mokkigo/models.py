@@ -135,14 +135,14 @@ class Participant(db.Model):
     __tablename__ = "participant"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False)
+    name = db.Column(db.String(128), nullable=False, unique=True)
     allergies = db.Column(db.String(128))
     visit_id = db.Column(db.Integer, db.ForeignKey("visit.id"), unique=True)
 
     def json_schema():
         schema = {
                 "type": "object",
-                "required": "name"
+                "required": ["name"]
         }
         props = schema["properties"] = {}
         props["name"] = {
@@ -159,7 +159,7 @@ class Participant(db.Model):
 
     def deserialize(self, doc):
         self.name = doc["name"]
-        self.allergies = doc["allergies"]
+        self.allergies = doc.get("allergies")
 
 
 class Item(db.Model):
