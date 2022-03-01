@@ -1,0 +1,101 @@
+---
+openapi: 3.0.3
+servers:
+- url: /api
+components:
+  parameters:
+    participant:
+      description: Selected participant
+      in: path
+      name: participant
+      required: true
+      schema:
+        type: string
+    mokki:
+      description: Selected mokki
+      in: path
+      name: mokki
+      required: true
+      schema:
+        type: string
+    visit:
+      description: Selected visit
+      in: path
+      name: visit
+      required: true
+      schema:
+        type: string
+    item:
+      description: Selected item
+      in: path
+      name: item
+      required: true
+      schema:
+        type: string
+  schemas:
+    Visit:
+      visit_name:
+        description: Name of the visit
+        type: string
+      time_start:
+        description: Start time of the visit
+        type: string
+      time_end:
+        description: End time of the visit
+        type: string
+      mokki_name:
+        description: Name of the mokki
+        type: string
+      required:
+        visit_name
+        time_start
+        time_end
+        mokki_name
+      type: object
+
+
+    Mokki:
+      name:
+        description: Name of the Mokki
+        type: string
+      location:
+        description: Location of the Mokki
+        type: string
+      required:
+        name
+        location
+      type: object
+
+    Participant:
+      name:
+        description: Name of the participant
+        type: string
+      allergies:
+        description: Participant's allergies
+        type: string
+      required:
+        name
+      type: object
+
+      Item:
+        name:
+          description: Name of the item
+          type: string
+        amount:
+          description: Amount of items
+          type: integer
+
+info:
+  title: MokkiGo
+  version: 0.0.1
+  description: |
+    This is an course project for the Prorammable Web Project course.
+    This API is called MokkiGo and it is used in cottage related activities.
+  termsOfService: http://totally.not.placehold.er/
+  contact:
+    url: http://totally.not.placehold.er/
+    email: invalidemail@inval.id
+    name: MokkiGo
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/license/LICENSE-2.0.html
