@@ -12,7 +12,9 @@ from werkzeug.exceptions import NotFound
 
 from mokkigo import db
 from mokkigo.models import Participant
-from mokkigo.constants import JSON
+from mokkigo.constants import (JSON, MASON, LINK_RELATIONS_URL,
+                               PARTICIPANT_PROFILE)
+from mokkigo.utils import create_error_response, MokkigoBuilder
 
 
 class ParticipantCollection(Resource):
@@ -33,12 +35,30 @@ class ParticipantCollection(Resource):
                 - name: Jane Doe
 
         """
-        body = {"items": []}
-        for db_p in Participant.query.all():
-            p = db_p.serialize()
+        participants = Participant.query.all()
+        if participants is None:
+            return create_error_response(
+                    title="Not found",
+                    status_code=404,
+                    message="Database is empty"
+            )
+        body = MokkigoBuilder(items=[])
+
+        body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+        body.add_control_add_participant()
+
+        for participant in participants:
+            p = MokkigoBuilder(
+                    name=participant.name,
+                    allergies=participant.allergies
+            )
+
+            p.add_control("self", url_for("api.participantitem",
+                                          participant=participant))
+            p.add_control("profile", PARTICIPANT_PROFILE)
             body["items"].append(p)
 
-        return Response(json.dumps(body), 200, mimetype=JSON)
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
     def post(self):
         """
@@ -70,17 +90,22 @@ class ParticipantCollection(Resource):
           '415':
             description: Wrong media type was used
         """
-        content_type = request.mimetype
-        if content_type != JSON:
-            return Response("Unsupported Media Type", status=415)
+        if request.mimetype != JSON:
+            return create_error_response(
+                    status_code=415,
+                    title="Unsupported Media Type",
+                    message="Content type must be JSON"
+            )
 
         try:
-            validate(
-                request.json,
-                Participant.json_schema()
-            )
+            validate(request.json, Participant.json_schema())
+
         except ValidationError as e:
-            return Response(400, "Invalid JSON document", str(e))
+            return create_error_response(
+                    status_code=415,
+                    title="Invalid JSON document",
+                    message=str(e)
+            )
 
         p = Participant(
             name=request.json["name"],
@@ -94,7 +119,10 @@ class ParticipantCollection(Resource):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return "Participant '{}' already exists".format(p.name), 409
+            return create_error_response(
+                    status_code=409,
+                    title="Participant already exists"
+            )
 
         return Response(status=201, headers={"Location": href})
 
@@ -116,8 +144,30 @@ class ParticipantItem(Resource):
           '404':
             description: The participant was not found
         """
-        body = participant.serialize()
-        return Response(json.dumps(body), 200, mimetype=JSON)
+        p = Participant.query.filter_by(name=participant.name).first()
+        if p is None:
+            return create_error_response(
+                    status_code=404,
+                    title="Not found",
+                    message="No participant with name {} saved".format(
+                        participant)
+            )
+
+        body = MokkigoBuilder(
+                name=p.name,
+                allergies=p.allergies
+        )
+
+        body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+
+        body.add_control("self", url_for("api.participantitem", participant=p))
+        body.add_control("profile", PARTICIPANT_PROFILE)
+        body.add_control("collection", url_for("api.participantcollection"))
+
+        body.add_control_delete_participant(participant=p)
+        body.add_control_edit_participant(participant=p)
+
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
     def put(self, participant):
         """
@@ -145,14 +195,21 @@ class ParticipantItem(Resource):
           '415':
             description: Wrong media type was used
         """
-        content_type = request.mimetype
-        if content_type != JSON:
-            return Response("Unsupported Media Type", status=415)
+        if request.mimetype != JSON:
+            return create_error_response(
+                    status_code=415,
+                    title="Content type error",
+                    message="Content type must be JSON"
+            )
 
         try:
             validate(request.json, Participant.json_schema())
         except ValidationError as e:
-            return Response(400, "Invalid JSON document", str(e))
+            return create_error_response(
+                    status_code=400,
+                    title="Invalid JSON document",
+                    message=str(e)
+            )
 
         participant.deserialize(request.json)
         try:
@@ -160,8 +217,10 @@ class ParticipantItem(Resource):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return "Participant '{}' already exists".format(
-                    participant.name), 409
+            return create_error_response(
+                    status_code=409,
+                    title="Participant already exists"
+            )
 
     def delete(self, participant):
         """
@@ -175,6 +234,14 @@ class ParticipantItem(Resource):
           '404':
             description: Participant not found
         """
+        if Participant.query.filter_by(name=participant.name).first() is None:
+            return create_error_response(
+                    status_code=404,
+                    title="Not found",
+                    message="No participants with name {} found".format(
+                        participant.name)
+            )
+
         db.session.delete(participant)
         db.session.commit()
         return Response(status=204)

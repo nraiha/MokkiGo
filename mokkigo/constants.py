@@ -1,1 +1,8 @@
 JSON = "application/json"
+MASON = "application/vnd.mason+json"
+LINK_RELATIONS_URL = "/link/relations/"
+ERROR_PROFILE = "/profiles/error/"
+PARTICIPANT_PROFILE = "/profiles/participant/"
+VISIT_PROFILE = "/profiles/visit/"
+MOKKI_PROFILE = "/profiles/mokki/"
+ITEM_PROFILE = "/profiles/item/"

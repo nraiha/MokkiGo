@@ -12,7 +12,8 @@ from werkzeug.exceptions import NotFound
 
 from mokkigo import db
 from mokkigo.models import Mokki
-from mokkigo.constants import JSON
+from mokkigo.constants import JSON, MASON, LINK_RELATIONS_URL, MOKKI_PROFILE
+from mokkigo.utils import create_error_response, MokkigoBuilder
 
 
 class MokkiCollection(Resource):
@@ -33,12 +34,30 @@ class MokkiCollection(Resource):
                   - name: Kemi-mokki
                     location: Kemi
         """
-        body = {"items": []}
-        for db_m in Mokki.query.all():
-            m = db_m.serialize()
+        mokkis = Mokki.query.all()
+        if mokkis is None:
+            return create_error_response(
+                    title="Not found",
+                    status_code=404,
+                    message="Database is empty"
+            )
+        body = MokkigoBuilder(items=[])
+
+        body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+        body.add_control_add_mokki()
+
+        for mokki in mokkis:
+            m = MokkigoBuilder(
+                name=mokki.name,
+                location=mokki.location
+            )
+
+            m.add_control("self", url_for("api.mokkiitem",
+                                          mokki=mokki))
+            m.add_control("profile", MOKKI_PROFILE)
             body["items"].append(m)
 
-        return Response(json.dumps(body), 200, mimetype=JSON)
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
     def post(self):
         """
@@ -70,14 +89,21 @@ class MokkiCollection(Resource):
           '415':
             description: Wrong media type was used
         """
-        content_type = request.mimetype
-        if content_type != JSON:
-            return Response("Unsupported Media Type", status=415)
+        if request.mimetype != JSON:
+            return create_error_response(
+                    status_code=415,
+                    title="Unsupported Media Type",
+                    message="Content type must be JSON"
+            )
 
         try:
             validate(request.json, Mokki.json_schema())
         except ValidationError as e:
-            return Response(400, "Invalid JSON document", str(e))
+            return create_error_response(
+                    status_code=415,
+                    title="Invalid JSON document",
+                    message=str(e)
+            )
 
         m = Mokki(name=request.json["name"], location=request.json["location"])
         href = url_for("api.mokkiitem", mokki=m)
@@ -86,7 +112,10 @@ class MokkiCollection(Resource):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return "Mokki '{}' already exists".format(m.name), 409
+            return create_error_response(
+                    status_code=409,
+                    title="Mokki already exists"
+            )
 
         return Response(status=201, headers={"Location": href})
 
@@ -109,8 +138,29 @@ class MokkiItem(Resource):
           '404':
             description: The mokki was not found
         """
-        body = mokki.serialize()
-        return Response(json.dumps(body), 200, mimetype=JSON)
+        m = Mokki.query.filter_by(name=mokki.name).first()
+        if m is None:
+            return create_error_response(
+                    status_code=404,
+                    title="Not found",
+                    message="No mokki with name {} saved".format(mokki)
+            )
+
+        body = MokkigoBuilder(
+                name=m.name,
+                location=m.location
+        )
+
+        body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+
+        body.add_control("self", url_for("api.mokkiitem", mokki=m))
+        body.add_control("profile", MOKKI_PROFILE)
+        body.add_control("collection", url_for("api.mokkicollection"))
+
+        body.add_control_delete_mokki(mokki=m)
+        body.add_control_edit_mokki(mokki=m)
+
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
     def put(self, mokki):
         """
@@ -140,11 +190,20 @@ class MokkiItem(Resource):
             description: Wrong media type was used
         """
         if request.mimetype != JSON:
-            return Response("Unsupported Media Type", status=415)
+            return create_error_response(
+                    status_code=415,
+                    title="Content type error",
+                    message="Content type must be JSON"
+            )
+
         try:
             validate(request.json, Mokki.json_schema())
         except ValidationError as e:
-            return Response(400, "Invalid JSON document", str(e))
+            return create_error_response(
+                    status_code=400,
+                    title="Invalid JSON document",
+                    message=str(e)
+            )
 
         mokki.deserialize(request.json)
         try:
@@ -152,7 +211,10 @@ class MokkiItem(Resource):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return "Mokki '{}' already exists".format(mokki.name), 409
+            return create_error_response(
+                    status_code=409,
+                    title="Mokki already exists"
+            )
 
     def delete(self, mokki):
         """
@@ -166,6 +228,13 @@ class MokkiItem(Resource):
           '404':
             description: Mokki not found
         """
+
+        if Mokki.query.filter_by(name=mokki.name).first() is None:
+            return create_error_response(
+                    status_code=404,
+                    title="Not found",
+                    message="No mokki with name {} found".format(mokki.name)
+            )
         db.session.delete(mokki)
         db.session.commit()
         return Response(status=204)
@@ -173,7 +242,7 @@ class MokkiItem(Resource):
 
 class MokkiConverter(BaseConverter):
     def to_url(self, mokki):
-        return str(mokki.id)
+        return str(mokki.name)
 
     def to_python(self, mokki_name):
         db_mokki = Mokki.query.filter_by(name=mokki_name).first()

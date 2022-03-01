@@ -12,7 +12,8 @@ from werkzeug.exceptions import (NotFound)
 
 from mokkigo import db
 from mokkigo.models import Item, Mokki
-from mokkigo.constants import JSON
+from mokkigo.constants import JSON, MASON, LINK_RELATIONS_URL, ITEM_PROFILE
+from mokkigo.utils import create_error_response, MokkigoBuilder
 
 
 class ItemCollection(Resource):
@@ -35,19 +36,36 @@ class ItemCollection(Resource):
         """
         db_mokki = Mokki.query.filter_by(name=mokki.name).first()
         if db_mokki is None:
-            raise NotFound
-        remaining = Item.query.filter_by(mokki=db_mokki)
-        body = {
-                "mokki": db_mokki.name,
-                "items": []
-        }
-        for item in remaining:
-            body["items"].append(
-                    {
-                        "name": item.name,
-                        "amount": item.amount
-                    }
+            return create_error_response(
+                    title="Not found",
+                    status_code=404,
+                    message="Database is empty"
             )
+
+        mokki_items = Item.query.filter_by(mokki=db_mokki)
+        if mokki_items is None:
+            return create_error_response(
+                    title="Not found",
+                    status_code=404,
+                    message="Database is empty"
+            )
+
+        body = MokkigoBuilder(items=[])
+
+        body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+        body.add_control_add_item(mokki)
+
+        for item in mokki_items:
+            i = MokkigoBuilder(
+                    name=item.name,
+                    amount=item.amount
+            )
+
+            i.add_control("self", url_for("api.itemitem",
+                                          mokki=mokki, item=item))
+            i.add_control("profile", ITEM_PROFILE)
+            body["items"].append(i)
+
         return Response(json.dumps(body), 200, mimetype=JSON)
 
     def post(self, mokki):
@@ -82,14 +100,21 @@ class ItemCollection(Resource):
             '415':
               description: Wrong media type was used
         """
-        content_type = request.mimetype
-        if content_type != JSON:
-            return Response("Unsupported Media Type", status=415)
+        if request.mimetype != JSON:
+            return create_error_response(
+                    status_code=415,
+                    title="Unsupported Media Type",
+                    message="Content type must be JSON"
+            )
 
         try:
             validate(request.json, Item.json_schema())
         except ValidationError as e:
-            return Response(str(e), status=400)
+            return create_error_response(
+                    status_code=415,
+                    title="Invalid JSON document",
+                    message=str(e)
+            )
 
         item = Item(
                 name=request.json["name"],
@@ -104,12 +129,12 @@ class ItemCollection(Resource):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return "Item '{}' already exists".format(item.name), 409
+            return create_error_response(
+                    status_code=409,
+                    title="Item already exists"
+            )
 
-        return Response(status=201,
-                        headers={
-                            "Location": href
-                        })
+        return Response(status=201, headers={"Location": href})
 
 
 class ItemItem(Resource):
@@ -130,7 +155,22 @@ class ItemItem(Resource):
           '404':
             description: Item not found
         """
-        body = item.serialize()
+        i = find_mokki_item(mokki, item)
+
+        body = MokkigoBuilder(
+                name=i.name,
+                amount=i.amount
+        )
+
+        body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+
+        body.add_control("self", url_for("api.itemitem", item=i))
+        body.add_control("profile", ITEM_PROFILE)
+        body.add_control("collection", url_for("api.itemcollection"))
+
+        body.add_control_delete_item(mokki=mokki, item=i)
+        body.add_control_edit_item(mokki=mokki, item=i)
+
         return Response(json.dumps(body), 200, mimetype=JSON)
 
     def put(self, mokki, item):
@@ -158,14 +198,22 @@ class ItemItem(Resource):
           '415':
             description: Wrong media type was used
         """
-        content_type = request.mimetype
-        if content_type != JSON:
-            return Response("Unsupported Media Type", status=415)
+        if request.mimetype != JSON:
+            return create_error_response(
+                    status_code=415,
+                    title="Content type error",
+                    message="Content type must be JSON"
+            )
 
+        find_mokki_item(mokki, item)
         try:
             validate(request.json, Item.json_schema())
         except ValidationError as e:
-            return Response(400, "Invalid JSON document", str(e))
+            return create_error_response(
+                    status_code=400,
+                    title="Invalid JSON document",
+                    message=str(e)
+            )
 
         item.deserialize(request.json)
         try:
@@ -173,7 +221,10 @@ class ItemItem(Resource):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return "Item '{}' already exists".format(item.name), 409
+            return create_error_response(
+                    status_code=409,
+                    title="Item already exists"
+            )
 
     def delete(self, mokki, item):
         """
@@ -187,6 +238,8 @@ class ItemItem(Resource):
           '404':
             description: Item not found
         """
+        find_mokki_item(mokki, item)
+
         db.session.delete(item)
         db.session.commit()
         return Response(status=204)
@@ -194,10 +247,34 @@ class ItemItem(Resource):
 
 class ItemConverter(BaseConverter):
     def to_url(self, item):
-        return str(item.id)
+        return str(item.name)
 
     def to_python(self, item_name):
         db_i = Item.query.filter_by(name=item_name).first()
         if db_i is None:
             raise NotFound
         return db_i
+
+
+def find_mokki_item(mokki, item):
+    """
+    Checks if there is specified mokki found and if it has specified item
+    """
+    # Is this redundant?
+    # In next query we filter by mokki=mokki.
+    if Mokki.query.filter_by(name=mokki.name).first() is None:
+        return create_error_response(
+                status_code=404,
+                title="Not found",
+                message="No mokki with name {} found".format(mokki.name)
+        )
+
+    i = Item.query.filter_by(mokki=mokki, name=item.name).first()
+    if i is None:
+        return create_error_response(
+                status_code=404,
+                title="Not found",
+                message="No item with name {} found".format(item.name)
+        )
+
+    return i

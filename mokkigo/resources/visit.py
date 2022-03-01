@@ -14,7 +14,8 @@ from dateutil import parser
 
 from mokkigo import db
 from mokkigo.models import Visit
-from mokkigo.constants import JSON
+from mokkigo.constants import JSON, MASON, LINK_RELATIONS_URL, VISIT_PROFILE
+from mokkigo.utils import create_error_response, MokkigoBuilder
 
 
 class VisitCollection(Resource):
@@ -39,11 +40,31 @@ class VisitCollection(Resource):
                   time_end:   2020-01-04T00:02:02.003+1:00
                   mokki_name: Ii-mokki
         """
-        body = {"items": []}
-        for db_v in Visit.query.all():
-            v = db_v.serialize()
+        visits = Visit.query.all()
+        if visits is None:
+            return create_error_response(
+                    title="Not found",
+                    status_code=404,
+                    message="Database is empty"
+            )
+
+        body = MokkigoBuilder(items=[])
+
+        body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+        body.add_control_add_visit()
+
+        for visit in visits:
+            v = MokkigoBuilder(
+                    visit_name=visit.visit_name,
+                    mokki_name=visit.mokki_name,
+                    time_start=visit.time_start.isoformat(),
+                    time_end=visit.time_end.isoformat()
+            )
+            v.add_control("self", url_for("api.visititem", visit=visit))
+            v.add_control("profile", VISIT_PROFILE)
             body["items"].append(v)
-        return Response(json.dumps(body), 200, mimetype=JSON)
+
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
     def post(self):
         """
@@ -77,9 +98,12 @@ class VisitCollection(Resource):
           '415':
             description: Wrong media type was used
         """
-        content_type = request.mimetype
-        if content_type != JSON:
-            return Response("Unsupported Media Type", status=415)
+        if request.mimetype != JSON:
+            return create_error_response(
+                    status_code=415,
+                    title="Unsupported Media Type",
+                    message="Content type must be JSON"
+            )
 
         try:
             validate(
@@ -88,7 +112,11 @@ class VisitCollection(Resource):
                 format_checker=draft7_format_checker
             )
         except ValidationError as e:
-            return "Invalid JSON document, {}".format(str(e)), 400
+            return create_error_response(
+                    status_code=415,
+                    title="Invalid JSON document",
+                    message=str(e)
+            )
 
         v = Visit(
             visit_name=request.json["visit_name"],
@@ -104,7 +132,10 @@ class VisitCollection(Resource):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return "Participant '{}' already exists".format(v.visit_name), 409
+            return create_error_response(
+                    status_code=409,
+                    title="Visit already exists"
+            )
 
         return Response(status=201, headers={"Location": href})
 
@@ -127,46 +158,77 @@ class VisitItem(Resource):
                   time_end: 1990-01-03T00:02:02.003+1:00
                   mokki_name: Ii-mokki
           '404':
-            description: The participant was not found
+            description: The visit was not found
         """
-        body = visit.serialize()
-        return Response(json.dumps(body), 200, mimetype=JSON)
+        v = Visit.query.filter_by(visit_name=visit.visit_name).first()
+        if v is None:
+            return create_error_response(
+                    status_code=404,
+                    title="Not found",
+                    message="No visit with name {} saved".format(
+                        visit)
+            )
+
+        body = MokkigoBuilder(
+                visit_name=v.visit_name,
+                mokki_name=v.mokki_name,
+                time_start=v.time_start,
+                time_end=v.time_end
+        )
+
+        body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+
+        body.add_control("self", url_for("api.visititem", visit=v))
+        body.add_control("profile", VISIT_PROFILE)
+        body.add_control("collection", url_for("api.visitcollection"))
+
+        body.add_control_delete_visit(visit=v)
+        body.add_control_edit_visit(visit=v)
+
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
     def put(self, visit):
         """
-        PUT method for ParticipantItem
+        PUT method for VisitItem
         OpenAPI description below:
         ---
-        description: Edit one participant
+        description: Edit one visit
         requestBody:
-          description: JSON document that contains new data for participant
+          description: JSON document that contains new data for visit
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Participant'
+                $ref: '#/components/schemas/Visit'
               example:
                 name: jugioh
                 allergies: plants
         responses:
           '204':
-            description: The participant was updated successfully
+            description: The visit was updated successfully
           '400':
             description: The request body was not valid
           '404':
-            description: The participant was not found
+            description: The visit was not found
           '409':
-            description: A participant with that name already exists
+            description: A visit with that name already exists
           '415':
             description: Wrong media type was used
         """
-        content_type = request.mimetype
-        if content_type != JSON:
-            return Response("Unsupported Media Type", status=415)
+        if request.mimetype != JSON:
+            return create_error_response(
+                    status_code=415,
+                    title="Content type error",
+                    message="Content type must be JSON"
+            )
 
         try:
             validate(request.json, Visit.json_schema())
         except ValidationError as e:
-            return Response(400, "Invalid JSON document", str(e))
+            return create_error_response(
+                    status_code=400,
+                    title="Invalid JSON document",
+                    message=str(e)
+            )
 
         visit.deserialize(request.json)
         try:
@@ -174,8 +236,10 @@ class VisitItem(Resource):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return "Participant '{}' already exists".format(
-                    visit.visit_name), 409
+            return create_error_response(
+                    status_code=409,
+                    title="Visit already exists"
+            )
 
     def delete(self, visit):
         """
@@ -189,6 +253,13 @@ class VisitItem(Resource):
           '404':
             description: visit not found
         """
+        if Visit.query.filter_by(visit_name=visit.visit_name).first() is None:
+            return create_error_response(
+                    status_code=404,
+                    title="Not found",
+                    message="No visits with name {} found".format(
+                        visit.visit_name)
+            )
         db.session.delete(visit)
         db.session.commit()
         return Response(status=204)
