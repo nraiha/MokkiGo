@@ -1,3 +1,5 @@
+# Some of the code taken from
+# https://lovelace.oulu.fi/ohjelmoitava-web/ohjelmoitava-web/flask-api-project-layout/
 import os
 import json
 
@@ -6,7 +8,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flasgger import Swagger, swag_from
 
 from mokkigo.constants import LINK_RELATIONS_URL, MASON
-from mokkigo.utils import MasonBuilder
 
 db = SQLAlchemy()
 
@@ -71,6 +72,7 @@ def create_app(test_config=None):
 
     @app.route("/api/")
     def index():
+        from mokkigo.utils import MasonBuilder
         body = MasonBuilder()
         body.add_namespace("mokkigo", LINK_RELATIONS_URL)
         body.add_control("mokkigo:participants-all",
