@@ -1,7 +1,12 @@
 import os
-from flask import Flask
+import json
+
+from flask import Flask, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
 from flasgger import Swagger, swag_from
+
+from mokkigo.constants import LINK_RELATIONS_URL, MASON
+from mokkigo.utils import MasonBuilder
 
 db = SQLAlchemy()
 
@@ -19,14 +24,13 @@ def create_app(test_config=None):
                                                             "development.db"),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
-    """
+
     app.config["SWAGGER"] = {
             "title": "MokkiGo",
             "openapi": "3.0.3",
             "uiversion": 3,
     }
     swagger = Swagger(app, template_file="doc/mokkigo.yml")
-    """
 
     if test_config is None:
         app.config.from_pyfile("config.py", silent=True)
@@ -55,5 +59,29 @@ def create_app(test_config=None):
 
     from . import models
     app.cli.add_command(models.init_db_command)
+
+    @app.route("/profiles/<profile>/")
+    def send_profile(profile):
+        # TODO: meaningful function
+        return "Request profile {}".format(profile)
+
+    @app.route(LINK_RELATIONS_URL)
+    def send_link_relations():
+        return "link relations"
+
+    @app.route("/api/")
+    def index():
+        body = MasonBuilder()
+        body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+        body.add_control("mokkigo:participants-all",
+                         url_for("api.participantcollection"))
+        body.add_control("mokkigo:visits-all",
+                         url_for("api.visitcollection"))
+        body.add_control("mokkigo:mokkis-all",
+                         url_for("api.mokkicollection"))
+        body.add_control("mokkigo:items-all",
+                         url_for("api.itemcollection"))
+
+        return Response(json.dumps(body), status=200, mimetype=MASON)
 
     return app
