@@ -87,7 +87,7 @@ class MokkigoBuilder(MasonBuilder):
     def add_control_delete_visit(self, visit):
         self.add_control(
                 "mokkigo:delete-visit",
-                href=url_for("api.visittitem", visit=visit),
+                href=url_for("api.visititem", visit=visit),
                 method="DELETE",
                 title="Delete this visit",
                 schema=Visit.json_schema()

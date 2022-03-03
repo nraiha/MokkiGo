@@ -172,8 +172,8 @@ class VisitItem(Resource):
         body = MokkigoBuilder(
                 visit_name=v.visit_name,
                 mokki_name=v.mokki_name,
-                time_start=v.time_start,
-                time_end=v.time_end
+                time_start=v.time_start.isoformat(),
+                time_end=v.time_end.isoformat()
         )
 
         body.add_namespace("mokkigo", LINK_RELATIONS_URL)
