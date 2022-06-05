@@ -26,6 +26,15 @@ class Menu:
 
         panel.update_panels()
 
+    def get_input(self, y, x, prompt):
+        curses.echo()
+        self._screen.addstr(y, x, prompt)
+        self._screen.addstr(y+1, x, "> ")
+        self._screen.refresh()
+        visit = self._screen.getstr(y+1, x+2, 80)
+        curses.noecho()
+        return visit.decode()
+
     def show_res_win(self, string):
         self._res_win.erase()
         self._res_win.box()
@@ -41,6 +50,29 @@ class Menu:
         self._res_panel.hide()
         panel.update_panels()
         curses.doupdate()
+
+    def show_res(self, data, lc, msg):
+        self.show_res_win(msg)
+
+        pad = curses.newpad(lc+10, self._maxx*2)
+        pad.refresh(self._pad_pos_y, self._pad_pos_x,
+                    7, 4, self._pady, self._padx)
+
+        i = 0
+        for line in data.splitlines():
+            pad.addstr(i, 3, line + " ")
+            i += 1
+
+        pad.refresh(self._pad_pos_y, self._pad_pos_x,
+                    7, 4, self._pady, self._padx)
+        self._res_win.refresh()
+        curses.doupdate()
+
+        self._ih.move_in_pad(self._res_win, pad, lc, self._maxx,
+                             self._pad_pos_y, self._pad_pos_x,
+                             self._pady, self._padx)
+
+        self.hide_res_win()
 
     def print_menu(self, pos, items):
         curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)

@@ -1,52 +1,24 @@
-import curses
 import requests
 import os
+import json
 
 from Menu import Menu
 from utils import _pass, debug_print
 
 
 class Visit(Menu):
-    def __init__(self, screen, ih):
+    def __init__(self, screen, ih, url):
         self._items = [
                 ("Get all visits", self.get_all_visits),
                 ("Get a visit", self.get_visit),
                 ("Post a visit", self.post_visit),
-                ("Edit a visit", _pass),
-                ("Delete a visit", _pass)
+                ("Edit a visit", self.edit_visit),
+                ("Delete a visit", self.delete_visit)
         ]
         self._screen = screen
         self._ih = ih
-
+        self._url = url
         Menu.__init__(self)
-
-    def get_input(self, y, x, prompt):
-        curses.echo()
-        self._screen.addstr(y, x, prompt)
-        self._screen.addstr(y+1, x, "> ")
-        self._screen.refresh()
-        visit = self._screen.getstr(y+1, x+2, 80)
-        curses.noecho()
-        return visit
-
-    def get_visit(self):
-        self.show_res_win("Get a visit")
-        url = "http://127.0.0.1:5000/api"
-        visit = self.get_input(7, 4, "Give visit name:")
-        self._screen.refresh()
-        resp = requests.get(url + "/visits/" + visit.decode())
-
-        try:
-            body = resp.json()
-        except ValueError:
-            self.show_res("No visit found!", 1, "Oh noes")
-            return
-
-        string = self.parse_visit(body)
-        lc = string.count('\n')
-
-        msg = "Visit: "
-        self.show_res(string, lc, msg)
 
     @staticmethod
     def parse_visit(data):
@@ -58,35 +30,13 @@ class Visit(Menu):
         msg += os.linesep
         return msg
 
-    def show_res(self, data, lc, msg):
-        self.show_res_win(msg)
-
-        pad = curses.newpad(lc+10, self._maxx*2)
-        pad.refresh(self._pad_pos_y, self._pad_pos_x,
-                    7, 4, self._pady, self._padx)
-
-        i = 0
-        for line in data.splitlines():
-            pad.addstr(i, 3, line + " ")
-            i += 1
-
-        pad.refresh(self._pad_pos_y, self._pad_pos_x,
-                    7, 4, self._pady, self._padx)
-        self._res_win.refresh()
-        curses.doupdate()
-
-        self._ih.move_in_pad(self._res_win, pad, lc, self._maxx,
-                             self._pad_pos_y, self._pad_pos_x,
-                             self._pady, self._padx)
-
-        self.hide_res_win()
-
-    def post_visit(self):
-        pass
-
+    #
+    #
+    # REST FUNCTIONS
+    #
+    #
     def get_all_visits(self):
-        url = "http://127.0.0.1:5000/api"
-        resp = requests.get(url + "/visits/")
+        resp = requests.get(self._url + "visits/")
         try:
             body = resp.json()
         except ValueError:
@@ -101,6 +51,134 @@ class Visit(Menu):
 
         msg = "Result of the get /visits/"
         self.show_res(string, lc, msg)
+
+    def get_visit(self):
+        self.show_res_win("Get a visit")
+        visit = self.get_input(7, 4, "Give visit name")
+
+        resp = requests.get(self._url + "visits/" + visit)
+
+        try:
+            body = resp.json()
+        except ValueError:
+            self.show_res("No visit found!", 1, "Oh noes")
+            return
+
+        string = self.parse_visit(body)
+        lc = string.count('\n')
+
+        msg = "Visit: "
+        self.show_res(string, lc, msg)
+
+    def post_visit(self):
+        self.show_res_win("Post a visit")
+        visit = self.get_input(7, 4, "Give visit name")
+        mokki = self.get_input(10, 4, "Give mokki name")
+        start = self.get_input(13, 4,
+                               "Give the starting time of visit " +
+                               "(YYYY-MM-DDThh:mm:ss+00:00)")
+        end = self.get_input(16, 4,
+                             "Give the ending time of visit " +
+                             "(YYYY-MM-DDThh:mm:ss+00:00)")
+
+        # Append the hour value if only date is inserted :)
+        try:
+            left, right = start.split('T')
+        except ValueError:
+            start += "T12:00:00+00:00"
+
+        try:
+            left, right = end.split('T')
+        except ValueError:
+            end += "T13:00:00+00:00"
+
+        data = {
+                "visit_name": visit,
+                "mokki_name": mokki,
+                "time_start": start,
+                "time_end": end
+        }
+
+        try:
+            r = requests.post(self._url + "visits/",
+                              data=json.dumps(data),
+                              headers={"Content-type": "application/json"})
+
+        except Exception as e:
+            e = str(e)
+            lc = e.count("\n")
+            self.show_res(e, lc, "Something went wrong :O")
+            return
+
+        if r.status_code != 201:
+            msg = str(r.text)
+            err_code = str(r.status_code)
+            lc = msg.count('\n')
+
+            self.show_res(msg, lc, err_code)
+
+    def edit_visit(self):
+        self.show_res_win("Edit a visit")
+        visit = self.get_input(7, 4, "Enter the visit to modify")
+        visit_new = self.get_input(10, 4, "Enter new name to visit")
+        mokki = self.get_input(13, 4, "Enter new name to mokki")
+        start = self.get_input(16, 4, "New start time " +
+                               "(YYYY-MM-DDThh:mm:ss+00:00")
+        end = self.get_input(19, 4, "New end time " +
+                             "(YYYY-MM-DDThh:mm:ss+00:00")
+
+        # Append the hour value if only date is inserted :)
+        try:
+            left, right = start.split('T')
+        except ValueError:
+            start += "T12:00:00+00:00"
+
+        try:
+            left, right = end.split('T')
+        except ValueError:
+            end += "T13:00:00+00:00"
+
+        data = {
+                "visit_name": visit_new,
+                "mokki_name": mokki,
+                "time_start": start,
+                "time_end": end
+        }
+
+        try:
+            r = requests.put(self._url + "visits/{}/".format(visit),
+                             data=json.dumps(data),
+                             headers={"Content-type": "application/json"})
+
+        except Exception as e:
+            e = str(e)
+            lc = e.count("\n")
+            self.show_res(e, lc, "Something went wrong :O")
+            return
+
+        if r.status_code != 201:
+            msg = str(r.text)
+            err_code = str(r.status_code)
+            lc = msg.count('\n')
+
+            self.show_res(msg, lc, err_code)
+
+    def delete_visit(self):
+        self.show_res_win("Delete a visit")
+        visit = self.get_input(7, 4, "Enter a visit to be deleted")
+        try:
+            r = requests.delete(self._url + "visits/{}/".format(visit))
+        except Exception as e:
+            e = str(e)
+            lc = e.count("\n")
+            self.show_res(e, lc, "Something went wrong :O")
+            return
+
+        if r.status_code != 204:
+            msg = str(r.text)
+            err_code = str(r.status_code)
+            lc = msg.count('\n')
+            self.show_res(msg, lc, err_code)
 
     def main(self):
         while self.menu(self._items, "Visit Menu"):

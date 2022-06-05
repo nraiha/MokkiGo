@@ -80,8 +80,8 @@ class VisitCollection(Resource):
                 $ref: '#/components/schemas/Visit'
               example:
                 name: Weekend in the Ii
-                time_start: 1990-01-01T00:02:02.003+1:00
-                time_end: 1990-01-05T00:02:02.003+1:00
+                time_start: 2022-06-05T16:25:29+00:00
+                time_end: 2022-06-05T16:25:30+00:00
                 mokki_name: Ii-mokki
         responses:
           '201':
@@ -240,6 +240,7 @@ class VisitItem(Resource):
                     status_code=409,
                     title="Visit already exists"
             )
+        return Response(status=201)
 
     def delete(self, visit):
         """

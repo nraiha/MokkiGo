@@ -8,15 +8,17 @@ from utils import _pass, debug_print
 
 
 class Client(Menu):
-    def __init__(self, screen):
+    def __init__(self, screen, url):
         # Hide cursor
         curses.curs_set(0)
 
         self._screen = screen
         self._ih = InputHandler()
+        self._url = url + 'api/'
+
         Menu.__init__(self)
 
-        self._visit = Visit(self._screen, self._ih)
+        self._visit = Visit(self._screen, self._ih, self._url)
         # self._mokki = Mokki()
         # self._item = Item()
         # self._par = Participant()
