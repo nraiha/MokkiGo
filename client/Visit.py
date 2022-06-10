@@ -3,7 +3,6 @@ import os
 import json
 
 from Menu import Menu
-from utils import _pass, debug_print
 
 
 class Visit(Menu):
