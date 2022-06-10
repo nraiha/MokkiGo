@@ -4,6 +4,8 @@ import json
 
 from Menu import Menu
 
+from requests.exceptions import JSONDecodeError
+
 
 class Visit(Menu):
     def __init__(self, screen, ih, url):
@@ -55,7 +57,7 @@ class Visit(Menu):
         self.show_res_win("Get a visit")
         visit = self.get_input(7, 4, "Give visit name")
 
-        resp = requests.get(self._url + "visits/" + visit)
+        resp = requests.get(self._url + "visits/" + visit + '/')
 
         try:
             body = resp.json()
@@ -80,7 +82,8 @@ class Visit(Menu):
                              "Give the ending time of visit " +
                              "(YYYY-MM-DDThh:mm:ss+00:00)")
 
-        # Append the hour value if only date is inserted :)
+        # The date is PITA to insert manually so,
+        # append the hour value if only date is inserted :)
         try:
             left, right = start.split('T')
         except ValueError:
@@ -110,11 +113,11 @@ class Visit(Menu):
             return
 
         if r.status_code != 201:
-            msg = str(r.text)
+            msg = str(r.json()['@error']['@message'])
             err_code = str(r.status_code)
             lc = msg.count('\n')
-
             self.show_res(msg, lc, err_code)
+
 
     def edit_visit(self):
         self.show_res_win("Edit a visit")
@@ -155,8 +158,14 @@ class Visit(Menu):
             self.show_res(e, lc, "Something went wrong :O")
             return
 
-        if r.status_code != 201:
-            msg = str(r.text)
+        if r.status_code == 404:
+            self.show_res("Visit not found", 1, str(r.status_code))
+
+        elif r.status_code != 204:
+            try:
+                msg = str(r.json()['@error']['@message'])
+            except JSONDecodeError:
+                msg = str(r.text)
             err_code = str(r.status_code)
             lc = msg.count('\n')
 
@@ -174,7 +183,7 @@ class Visit(Menu):
             return
 
         if r.status_code != 204:
-            msg = str(r.text)
+            msg = str(r.json()['@error']['@message'])
             err_code = str(r.status_code)
             lc = msg.count('\n')
             self.show_res(msg, lc, err_code)

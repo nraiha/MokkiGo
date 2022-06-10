@@ -52,7 +52,7 @@ class Mokki(Menu):
         self.show_res_win("Get a mokki")
         mokki = self.get_input(7, 4, "Give mokki name")
 
-        resp = requests.get(self._url + "mokkis/" + mokki)
+        resp = requests.get(self._url + "mokkis/" + mokki + '/')
 
         try:
             body = resp.json()
@@ -88,7 +88,7 @@ class Mokki(Menu):
             return
 
         if r.status_code != 201:
-            msg = str(r.text)
+            msg = str(r.json()['@error']['@message'])
             err_code = str(r.status_code)
             lc = msg.count('\n')
 
@@ -116,8 +116,8 @@ class Mokki(Menu):
             self.show_res(e, lc, "Something went wrong :O")
             return
 
-        if r.status_code != 201:
-            msg = str(r.text)
+        if r.status_code != 204:
+            msg = str(r.json()['@error']['@message'])
             err_code = str(r.status_code)
             lc = msg.count('\n')
 
@@ -135,7 +135,7 @@ class Mokki(Menu):
             return
 
         if r.status_code != 204:
-            msg = str(r.text)
+            msg = str(r.json()['@error']['@message'])
             err_code = str(r.status_code)
             lc = msg.count('\n')
             self.show_res(msg, lc, err_code)

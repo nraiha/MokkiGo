@@ -171,19 +171,19 @@ class MokkigoBuilder(MasonBuilder):
                 schema=Item.json_schema()
         )
 
-    def add_control_delete_item(self, item):
+    def add_control_delete_item(self, mokki, item):
         self.add_control(
                 "mokkigo:delete-item",
-                href=url_for("api.itemitem", item=item),
+                href=url_for("api.itemitem", mokki=mokki, item=item),
                 method="DELETE",
                 title="Delete this item",
                 schema=Item.json_schema()
         )
 
-    def add_control_edit_item(self, item):
+    def add_control_edit_item(self, mokki, item):
         self.add_control(
                 "mokkigo:edit-item",
-                href=url_for("api.itemitem", item=item),
+                href=url_for("api.itemitem", mokki=mokki, item=item),
                 method="PUT",
                 encoding="json",
                 title="Edit this item",

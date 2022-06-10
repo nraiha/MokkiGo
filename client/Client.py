@@ -1,11 +1,13 @@
 import curses
 
 from Menu import Menu
-from Visit import Visit
-from Mokki import Mokki
 from InputHandler import InputHandler
 
-from utils import _pass, debug_print
+from Visit import Visit
+from Mokki import Mokki
+from Item import Item
+from Participant import Participant
+
 
 
 class Client(Menu):
@@ -21,14 +23,14 @@ class Client(Menu):
 
         self._visit = Visit(self._screen, self._ih, self._url)
         self._mokki = Mokki(self._screen, self._ih, self._url)
-        # self._item = Item()
-        # self._par = Participant()
+        self._item = Item(self._screen, self._ih, self._url)
+        self._par = Participant(self._screen, self._ih, self._url)
 
         self._items = [
                 ("Visit", self._visit.main),
                 ("Mokki", self._mokki.main),
-                ("Item", _pass),
-                ("Participant", _pass)
+                ("Item", self._item.main),
+                ("Participant", self._par.main)
         ]
 
         self.main()
@@ -42,7 +44,7 @@ class Client(Menu):
 if __name__ == '__main__':
     try:
         import os
-        url = 'https://127.0.0.1:5000/'
+        url = 'http://127.0.0.1:5000/'
         if os.path.exists('log.txt'):
             os.remove('log.txt')
         curses.wrapper(Client, url)

@@ -221,6 +221,7 @@ class ParticipantItem(Resource):
                     status_code=409,
                     title="Participant already exists"
             )
+        return Response(status=204, headers={"Location": href})
 
     def delete(self, participant):
         """

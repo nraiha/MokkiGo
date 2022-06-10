@@ -215,6 +215,7 @@ class MokkiItem(Resource):
                     status_code=409,
                     title="Mokki already exists"
             )
+        return Response(status=204)
 
     def delete(self, mokki):
         """

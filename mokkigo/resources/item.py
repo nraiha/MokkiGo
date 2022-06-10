@@ -34,6 +34,7 @@ class ItemCollection(Resource):
                 - name: item2
                   amount: 5
         """
+        # find_
         db_mokki = Mokki.query.filter_by(name=mokki.name).first()
         if db_mokki is None:
             return create_error_response(
@@ -155,7 +156,7 @@ class ItemItem(Resource):
           '404':
             description: Item not found
         """
-        i = find_mokki_item(mokki, item)
+        m, i = find_mokki_item(mokki, item)
 
         body = MokkigoBuilder(
                 name=i.name,
@@ -164,9 +165,10 @@ class ItemItem(Resource):
 
         body.add_namespace("mokkigo", LINK_RELATIONS_URL)
 
-        body.add_control("self", url_for("api.itemitem", item=i))
+        body.add_control("self", url_for("api.itemitem", mokki=mokki, item=i))
         body.add_control("profile", ITEM_PROFILE)
-        body.add_control("collection", url_for("api.itemcollection"))
+        body.add_control("collection", url_for("api.itemcollection", 
+                                               mokki=mokki))
 
         body.add_control_delete_item(mokki=mokki, item=i)
         body.add_control_edit_item(mokki=mokki, item=i)
@@ -225,6 +227,7 @@ class ItemItem(Resource):
                     status_code=409,
                     title="Item already exists"
             )
+        return Response(status=204)
 
     def delete(self, mokki, item):
         """
@@ -262,7 +265,8 @@ def find_mokki_item(mokki, item):
     """
     # Is this redundant?
     # In next query we filter by mokki=mokki.
-    if Mokki.query.filter_by(name=mokki.name).first() is None:
+    m = Mokki.query.filter_by(name=mokki.name).first()
+    if m is None:
         return create_error_response(
                 status_code=404,
                 title="Not found",
@@ -270,6 +274,8 @@ def find_mokki_item(mokki, item):
         )
 
     i = Item.query.filter_by(mokki=mokki, name=item.name).first()
+    print(i.name)
+    print(i.amount)
     if i is None:
         return create_error_response(
                 status_code=404,
@@ -277,4 +283,4 @@ def find_mokki_item(mokki, item):
                 message="No item with name {} found".format(item.name)
         )
 
-    return i
+    return m, i

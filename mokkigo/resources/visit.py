@@ -240,7 +240,7 @@ class VisitItem(Resource):
                     status_code=409,
                     title="Visit already exists"
             )
-        return Response(status=201)
+        return Response(status=204)
 
     def delete(self, visit):
         """

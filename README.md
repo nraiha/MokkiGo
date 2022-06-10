@@ -25,6 +25,7 @@ __Remember to include all required documentation and HOWTOs, including how to cr
 Go to root folder /path/to/dir/MokkiGo <br>
 export FLASK_APP=mokkigo <br>
 export FLASK_ENV=development <br>
+flask init-db
 flask run
 </p>
 
