@@ -11,7 +11,7 @@ from werkzeug.routing import BaseConverter
 from werkzeug.exceptions import NotFound
 
 from mokkigo import db
-from mokkigo.models import Participant
+from mokkigo.models import Participant, Visit
 from mokkigo.constants import (JSON, MASON, LINK_RELATIONS_URL,
                                PARTICIPANT_PROFILE)
 from mokkigo.utils import create_error_response, MokkigoBuilder
@@ -38,23 +38,28 @@ class ParticipantCollection(Resource):
         participants = Participant.query.all()
         if participants is None:
             return create_error_response(
-                    title="Not found",
-                    status_code=404,
-                    message="Database is empty"
+                title="Not found",
+                status_code=404,
+                message="Database is empty"
             )
-        body = MokkigoBuilder(items=[])
 
+        body = MokkigoBuilder(items=[])
         body.add_namespace("mokkigo", LINK_RELATIONS_URL)
         body.add_control_add_participant()
 
         for participant in participants:
+            visit_names = []
+            for visit in participant.visits:
+                print("Visit: {}, for participant {}".format(visit.visit_name, participant.name))
+                visit_names.append(visit.visit_name)
+
             p = MokkigoBuilder(
-                    name=participant.name,
-                    allergies=participant.allergies
+                name=participant.name,
+                allergies=participant.allergies,
+                visits=visit_names
             )
 
-            p.add_control("self", url_for("api.participantitem",
-                                          participant=participant))
+            p.add_control("self", url_for("api.participantitem", participant=participant))
             p.add_control("profile", PARTICIPANT_PROFILE)
             body["items"].append(p)
 
@@ -112,6 +117,18 @@ class ParticipantCollection(Resource):
             allergies=request.json.get("allergies")
         )
 
+        names = request.json["visits"]
+        for name in names:
+            visit = Visit.query.filter_by(visit_name=name).first()
+            if visit is None:
+                return create_error_response(
+                    status_code=404,
+                    title="Not found",
+                    message="No visit with name {} found".format(name)
+                )
+
+            p.visits.append(visit)
+
         href = url_for("api.participantitem", participant=p)
 
         try:
@@ -155,7 +172,8 @@ class ParticipantItem(Resource):
 
         body = MokkigoBuilder(
                 name=p.name,
-                allergies=p.allergies
+                allergies=p.allergies,
+                visits=p.visits
         )
 
         body.add_namespace("mokkigo", LINK_RELATIONS_URL)
