@@ -1,3 +1,4 @@
+#from asyncio.windows_events import NULL
 import json
 
 from flask import request, Response, url_for
@@ -13,7 +14,7 @@ from werkzeug.exceptions import (NotFound)
 from dateutil import parser
 
 from mokkigo import db
-from mokkigo.models import Visit
+from mokkigo.models import Participant, Visit
 from mokkigo.constants import JSON, MASON, LINK_RELATIONS_URL, VISIT_PROFILE
 from mokkigo.utils import create_error_response, MokkigoBuilder
 
@@ -53,13 +54,22 @@ class VisitCollection(Resource):
         body.add_namespace("mokkigo", LINK_RELATIONS_URL)
         body.add_control_add_visit()
 
+        participant_names = []
+
         for visit in visits:
+            for part in visit.participants:
+                print(part.name)
+                participant_names.append(part.name)
+
             v = MokkigoBuilder(
-                    visit_name=visit.visit_name,
-                    mokki_name=visit.mokki_name,
-                    time_start=visit.time_start.isoformat(),
-                    time_end=visit.time_end.isoformat()
+                visit_name=visit.visit_name,
+                mokki_name=visit.mokki_name,
+                time_start=visit.time_start.isoformat(),
+                time_end=visit.time_end.isoformat(),
+                participants=participant_names
             )
+
+            participant_names=[]
             v.add_control("self", url_for("api.visititem", visit=visit))
             v.add_control("profile", VISIT_PROFILE)
             body["items"].append(v)
@@ -124,6 +134,20 @@ class VisitCollection(Resource):
             time_start=parser.parse(request.json["time_start"]),
             time_end=parser.parse(request.json["time_end"])
         )
+
+        participantNames=request.json["participants"]
+        for name in participantNames:
+            participant = Participant.query.filter_by(name=name).first()
+            if participant is None:
+                return create_error_response(
+                    status_code=404,
+                    title="Not found",
+                    message="No participant with name {} found".format(name)
+                )
+
+            #print("Adding participant: {}".format(name))
+            v.participants.append(participant)
+
 
         href = url_for("api.visititem", visit=v)
 
