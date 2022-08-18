@@ -5,6 +5,8 @@ import os
 import pytest
 import tempfile
 
+from datetime import datetime
+
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 
@@ -38,32 +40,70 @@ def app():
     os.unlink(db_fname)
 
 
-def _get_visit():
-    return Visit(
-            visit_name="visiitti",
-            time_start="1990-01-01",
-            time_end="1990-01-08"
-    )
+def _get_visit(num, mokki, parts):
+    name = "Visit {}".format(num)
+    time = datetime.now()
+    return Visit(visit_name=name,
+                 mokki_name=mokki,
+                 time_start=time,
+                 time_end=time,
+                 participants=parts)
 
 
-def _get_mokki():
-    return Mokki(
-            name="mokki",
-            location="Oulu"
-    )
+def _get_mokki(num):
+    name = "Mokki {}".format(num)
+    location = "Location {}".format(num)
+    return Mokki(name=name, location=location)
 
 
-def _get_participant():
-    return Participant(
-            name="Erkki Esimerkki"
-    )
+def _get_participant(num):
+    name = "Participant {}".format(num)
+    allergies = "Food {}".format(num)
+    return Participant(name=name, allergies=allergies)
 
 
-def _get_item():
-    return Item(
-            name="test_item",
-            amount="a lot",
-        )
+def _get_item(num):
+    name = "Item {}".format(num)
+    amount = "{}".format(num)
+    return Item(name=name, amount=amount)
+
+
+def test_create_item(app):
+    with app.app_context():
+        i = _get_item(1)
+        db.session.add(i)
+        db.session.commit()
+        assert Item.query.count() == 1
+
+
+def test_create_mokki(app):
+    with app.app_context():
+        m = _get_mokki(1)
+        db.session.add(m)
+        db.session.commit()
+        assert Mokki.query.count()
+
+
+def test_create_participant(app):
+    with app.app_context():
+        p = _get_participant(1)
+        db.session.add(p)
+        db.session.commit()
+        assert Participant.query.count()
+
+
+def test_create_visit(app):
+    with app.app_context():
+        participants = []
+        m = _get_mokki(1)
+        p1 = _get_participant(1)
+        participants.append(p1)
+        v = _get_visit(2, m.name, participants)
+
+        db.session.add(m)
+        db.session.add(p1)
+        db.session.add(v)
+        db.session.commit()
 
 
 def test_create_instances(app):
@@ -74,22 +114,19 @@ def test_create_instances(app):
     saved correctly.
     """
     with app.app_context():
-        p1 = _get_participant()
-        p2 = _get_participant()
+        p1 = _get_participant(num=1)
+        p2 = _get_participant(num=2)
 
-        i1 = _get_item()
-        i2 = _get_item()
+        i1 = _get_item(num=1)
+        i2 = _get_item(num=2)
 
-        m1 = _get_mokki()
+        m1 = _get_mokki(num=1)
 
-        v1 = _get_visit()
+        parts = []
+        parts.append(p1)
+        parts.append(p2)
 
-        v1.mokki_name = m1.name
-        v1.participants.append(p1)
-        v1.participants.append(p2)
-
-        i1.mokki = m1
-        i2.mokki = m1
+        v1 = _get_visit(num=1, mokki=m1.name, parts=parts)
 
         db.session.add(p1)
         db.session.add(p2)

@@ -34,7 +34,7 @@ def create_app(test_config=None):
     Swagger(app, template_file="doc/mokkigo.yml")
 
     if test_config is None:
-        app.config.from_pyfile("config.py", silent=True)
+        app.config.from_pyfile("config.py", silent=True)  # pragma: no coverity
     else:
         app.config.from_mapping(test_config)
 
@@ -61,14 +61,14 @@ def create_app(test_config=None):
     from . import models
     app.cli.add_command(models.init_db_command)
 
-    @app.route("/profiles/<profile>/")
-    def send_profile(profile):
-        # TODO: meaningful function
-        return "Request profile {}".format(profile)
+    # @app.route("/profiles/<profile>/")
+    # def send_profile(profile):
+    #     # TODO: meaningful function
+    #     return "Request profile {}".format(profile)
 
-    @app.route(LINK_RELATIONS_URL)
-    def send_link_relations():
-        return "link relations"
+    # @app.route(LINK_RELATIONS_URL)
+    # def send_link_relations():
+    #     return "link relations"
 
     @app.route("/api/")
     def index():
@@ -81,8 +81,8 @@ def create_app(test_config=None):
                          url_for("api.visitcollection"))
         body.add_control("mokkigo:mokkis-all",
                          url_for("api.mokkicollection"))
-        body.add_control("mokkigo:items-all",
-                         url_for("api.itemcollection"))
+        # body.add_control("mokkigo:items-all",
+        #                  url_for("api.itemcollection"))
 
         return Response(json.dumps(body), status=200, mimetype=MASON)
 

@@ -3,8 +3,6 @@ import json
 from flask import request, Response, url_for
 from flask_restful import Resource
 
-from sqlalchemy.exc import IntegrityError
-
 from jsonschema import validate, ValidationError
 
 from werkzeug.routing import BaseConverter
@@ -34,9 +32,10 @@ class ItemCollection(Resource):
                 - name: item2
                   amount: 5
         """
-        # find_
         db_mokki = Mokki.query.filter_by(name=mokki.name).first()
-        if db_mokki is None:
+
+        is_items = Item.query.filter_by(mokki=db_mokki).first()
+        if not is_items:
             return create_error_response(
                     title="Not found",
                     status_code=404,
@@ -44,16 +43,12 @@ class ItemCollection(Resource):
             )
 
         mokki_items = Item.query.filter_by(mokki=db_mokki)
-        if mokki_items is None:
-            return create_error_response(
-                    title="Not found",
-                    status_code=404,
-                    message="Database is empty"
-            )
 
         body = MokkigoBuilder(items=[])
 
         body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+        body.add_namespace("self", url_for("api.itemcollection",
+                                           mokki=db_mokki))
         body.add_control_add_item(mokki)
 
         for item in mokki_items:
@@ -112,23 +107,26 @@ class ItemCollection(Resource):
             validate(request.json, Item.json_schema())
         except ValidationError as e:
             return create_error_response(
-                    status_code=415,
+                    status_code=400,
                     title="Invalid JSON document",
                     message=str(e)
             )
 
-        item = Item(
-                name=request.json["name"],
-                amount=request.json["amount"],
-                mokki=mokki
-        )
-
-        href = url_for("api.itemitem", mokki=mokki, item=item)
-
         try:
+            if Item.query.filter_by(name=request.json["name"]).first():
+                raise Exception
+
+            item = Item(
+                    name=request.json["name"],
+                    amount=request.json["amount"],
+                    mokki=mokki
+            )
+
+            href = url_for("api.itemitem", mokki=mokki, item=item)
+
             db.session.add(item)
             db.session.commit()
-        except IntegrityError:
+        except Exception:
             db.session.rollback()
             return create_error_response(
                     status_code=409,
@@ -217,16 +215,20 @@ class ItemItem(Resource):
                     message=str(e)
             )
 
-        item.deserialize(request.json)
         try:
+            if Item.query.filter_by(name=request.json["name"]).first():
+                raise Exception
+
+            item.deserialize(request.json)
             db.session.add(item)
             db.session.commit()
-        except IntegrityError:
+        except Exception:
             db.session.rollback()
             return create_error_response(
                     status_code=409,
                     title="Item already exists"
             )
+
         return Response(status=204)
 
     def delete(self, mokki, item):
@@ -263,24 +265,8 @@ def find_mokki_item(mokki, item):
     """
     Checks if there is specified mokki found and if it has specified item
     """
-    # Is this redundant?
-    # In next query we filter by mokki=mokki.
     m = Mokki.query.filter_by(name=mokki.name).first()
-    if m is None:
-        return create_error_response(
-                status_code=404,
-                title="Not found",
-                message="No mokki with name {} found".format(mokki.name)
-        )
 
     i = Item.query.filter_by(mokki=mokki, name=item.name).first()
-    print(i.name)
-    print(i.amount)
-    if i is None:
-        return create_error_response(
-                status_code=404,
-                title="Not found",
-                message="No item with name {} found".format(item.name)
-        )
 
     return m, i

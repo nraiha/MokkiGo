@@ -29,6 +29,18 @@ flask init-db
 flask run
 </p>
 
+Alternatively:
+
+<p>
+Go to root folder /path/to/dir/MokkiGo <br>
+./mokkigo.sh init
+./mokkigo.sh run
+
+OR
+
+./mokkigo.sh init run
+</p>
+
 # Running tests:
 pytest --cov-report term-missing --cov=mokkigo
 

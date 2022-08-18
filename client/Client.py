@@ -1,4 +1,7 @@
 import curses
+import os
+
+from requests.exceptions import ConnectionError
 
 from Menu import Menu
 from InputHandler import InputHandler
@@ -7,7 +10,6 @@ from Visit import Visit
 from Mokki import Mokki
 from Item import Item
 from Participant import Participant
-
 
 
 class Client(Menu):
@@ -43,10 +45,12 @@ class Client(Menu):
 
 if __name__ == '__main__':
     try:
-        import os
         url = 'http://127.0.0.1:5000/'
         if os.path.exists('log.txt'):
             os.remove('log.txt')
+
         curses.wrapper(Client, url)
     except KeyboardInterrupt:
         print("Byebye")
+    except ConnectionError:
+        print("No connection to server!")

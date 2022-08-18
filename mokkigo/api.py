@@ -10,6 +10,7 @@ from mokkigo.resources.participant import (ParticipantCollection,
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
 
+
 api.add_resource(MokkiCollection, "/mokkis/")
 api.add_resource(MokkiItem, "/mokkis/<mokki:mokki>/")
 

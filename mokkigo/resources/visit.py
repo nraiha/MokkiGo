@@ -41,7 +41,7 @@ class VisitCollection(Resource):
                   mokki_name: Ii-mokki
         """
         visits = Visit.query.all()
-        if visits is None:
+        if not visits:
             return create_error_response(
                     title="Not found",
                     status_code=404,
@@ -51,6 +51,7 @@ class VisitCollection(Resource):
         body = MokkigoBuilder(items=[])
 
         body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+        body.add_control("self", url_for("api.visitcollection"))
         body.add_control_add_visit()
 
         participant_names = []
@@ -121,33 +122,26 @@ class VisitCollection(Resource):
             )
         except ValidationError as e:
             return create_error_response(
-                    status_code=415,
+                    status_code=400,
                     title="Invalid JSON document",
                     message=str(e)
             )
 
-        v = Visit(
-            visit_name=request.json["visit_name"],
-            mokki_name=request.json["mokki_name"],
-            time_start=parser.parse(request.json["time_start"]),
-            time_end=parser.parse(request.json["time_end"])
-        )
-
-        participant_names = request.json["participants"]
-        for name in participant_names:
-            participant = Participant.query.filter_by(name=name).first()
-            if participant is None:
-                return create_error_response(
-                    status_code=404,
-                    title="Not found",
-                    message="No participant with name {} found".format(name)
-                )
-
-            v.participants.append(participant)
-
-        href = url_for("api.visititem", visit=v)
-
         try:
+            v = Visit(
+                visit_name=request.json["visit_name"],
+                mokki_name=request.json["mokki_name"],
+                time_start=parser.parse(request.json["time_start"]),
+                time_end=parser.parse(request.json["time_end"])
+            )
+
+            participant_names = request.json["participants"]
+            for name in participant_names:
+                participant = Participant.query.filter_by(name=name).first()
+                v.participants.append(participant)
+
+            href = url_for("api.visititem", visit=v)
+
             db.session.add(v)
             db.session.commit()
         except IntegrityError:
@@ -181,19 +175,16 @@ class VisitItem(Resource):
             description: The visit was not found
         """
         v = Visit.query.filter_by(visit_name=visit.visit_name).first()
-        if v is None:
-            return create_error_response(
-                    status_code=404,
-                    title="Not found",
-                    message="No visit with name {} saved".format(
-                        visit)
-            )
+        p = []
+        for part in v.participants:
+            p.append(part.name)
 
         body = MokkigoBuilder(
                 visit_name=v.visit_name,
                 mokki_name=v.mokki_name,
                 time_start=v.time_start.isoformat(),
-                time_end=v.time_end.isoformat()
+                time_end=v.time_end.isoformat(),
+                participants=p
         )
 
         body.add_namespace("mokkigo", LINK_RELATIONS_URL)
@@ -250,8 +241,8 @@ class VisitItem(Resource):
                     message=str(e)
             )
 
-        visit.deserialize(request.json)
         try:
+            visit.deserialize(request.json)
             db.session.add(visit)
             db.session.commit()
         except IntegrityError:
@@ -274,13 +265,6 @@ class VisitItem(Resource):
           '404':
             description: visit not found
         """
-        if Visit.query.filter_by(visit_name=visit.visit_name).first() is None:
-            return create_error_response(
-                    status_code=404,
-                    title="Not found",
-                    message="No visits with name {} found".format(
-                        visit.visit_name)
-            )
         db.session.delete(visit)
         db.session.commit()
         return Response(status=204)

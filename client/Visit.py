@@ -5,6 +5,7 @@ import json
 from Menu import Menu
 
 from requests.exceptions import JSONDecodeError
+from requests.exceptions import ConnectionError
 
 
 class Visit(Menu):
@@ -44,6 +45,9 @@ class Visit(Menu):
             body = resp.json()
         except ValueError:
             self.show_res("No visits found!", 1, "Oh noes")
+            return
+        except ConnectionError:
+            self.show_res("No active server found!", 1, "Oh noes")
             return
 
         data = body["items"]
@@ -86,7 +90,6 @@ class Visit(Menu):
         part_str = self.get_input(19, 4,
                                   "Give participants, separated by ;")
         ps = part_str.split(';')
-        
 
         # The date is PITA to insert manually so,
         # append the hour value if only date is inserted :)
@@ -121,11 +124,10 @@ class Visit(Menu):
 
         if r.status_code != 201:
             print(r)
-            #msg = str(r.json()['@error']['@message'])
-            #err_code = str(r.status_code)
-            #lc = msg.count('\n')
-            #self.show_res(msg, lc, err_code)
-
+            # msg = str(r.json()['@error']['@message'])
+            # err_code = str(r.status_code)
+            # lc = msg.count('\n')
+            # self.show_res(msg, lc, err_code)
 
     def edit_visit(self):
         self.show_res_win("Edit a visit")

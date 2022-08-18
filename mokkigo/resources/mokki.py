@@ -35,7 +35,7 @@ class MokkiCollection(Resource):
                     location: Kemi
         """
         mokkis = Mokki.query.all()
-        if mokkis is None:
+        if not mokkis:
             return create_error_response(
                     title="Not found",
                     status_code=404,
@@ -44,6 +44,7 @@ class MokkiCollection(Resource):
         body = MokkigoBuilder(items=[])
 
         body.add_namespace("mokkigo", LINK_RELATIONS_URL)
+        body.add_control("self", url_for("api.mokkicollection"))
         body.add_control_add_mokki()
 
         for mokki in mokkis:
@@ -100,7 +101,7 @@ class MokkiCollection(Resource):
             validate(request.json, Mokki.json_schema())
         except ValidationError as e:
             return create_error_response(
-                    status_code=415,
+                    status_code=400,
                     title="Invalid JSON document",
                     message=str(e)
             )
@@ -139,12 +140,15 @@ class MokkiItem(Resource):
             description: The mokki was not found
         """
         m = Mokki.query.filter_by(name=mokki.name).first()
-        if m is None:
-            return create_error_response(
-                    status_code=404,
-                    title="Not found",
-                    message="No mokki with name {} saved".format(mokki)
-            )
+
+        # Cannot get here because URL does not then exist
+
+        # if m is None:
+        #     return create_error_response(
+        #             status_code=404,
+        #             title="Not found",
+        #             message="No mokki with name {} saved".format(mokki)
+        #     )
 
         body = MokkigoBuilder(
                 name=m.name,
@@ -229,13 +233,14 @@ class MokkiItem(Resource):
           '404':
             description: Mokki not found
         """
+        # Cannot get here because URL does not exist
 
-        if Mokki.query.filter_by(name=mokki.name).first() is None:
-            return create_error_response(
-                    status_code=404,
-                    title="Not found",
-                    message="No mokki with name {} found".format(mokki.name)
-            )
+        # if Mokki.query.filter_by(name=mokki.name).first() is None:
+        #     return create_error_response(
+        #             status_code=404,
+        #             title="Not found",
+        #             message="No mokki with name {} found".format(mokki.name)
+        #     )
         db.session.delete(mokki)
         db.session.commit()
         return Response(status=204)
