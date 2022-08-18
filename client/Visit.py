@@ -23,11 +23,13 @@ class Visit(Menu):
 
     @staticmethod
     def parse_visit(data):
+        p = data['participants']
         msg = ''
         msg += "Name of the visit: " + data['visit_name'] + os.linesep
         msg += "Name of the mokki: " + data['mokki_name'] + os.linesep
         msg += "Start date: " + data['time_start'].split('T')[0] + os.linesep
         msg += "End date: " + data['time_end'].split('T')[0] + os.linesep
+        msg += "Participants: " + " ; ".join(p) + os.linesep
         msg += os.linesep
         return msg
 
@@ -81,6 +83,10 @@ class Visit(Menu):
         end = self.get_input(16, 4,
                              "Give the ending time of visit " +
                              "(YYYY-MM-DDThh:mm:ss+00:00)")
+        part_str = self.get_input(19, 4,
+                                  "Give participants, separated by ;")
+        ps = part_str.split(';')
+        
 
         # The date is PITA to insert manually so,
         # append the hour value if only date is inserted :)
@@ -98,7 +104,8 @@ class Visit(Menu):
                 "visit_name": visit,
                 "mokki_name": mokki,
                 "time_start": start,
-                "time_end": end
+                "time_end": end,
+                "participants": ps
         }
 
         try:
@@ -113,10 +120,11 @@ class Visit(Menu):
             return
 
         if r.status_code != 201:
-            msg = str(r.json()['@error']['@message'])
-            err_code = str(r.status_code)
-            lc = msg.count('\n')
-            self.show_res(msg, lc, err_code)
+            print(r)
+            #msg = str(r.json()['@error']['@message'])
+            #err_code = str(r.status_code)
+            #lc = msg.count('\n')
+            #self.show_res(msg, lc, err_code)
 
 
     def edit_visit(self):

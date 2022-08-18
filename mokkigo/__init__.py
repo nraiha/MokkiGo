@@ -5,7 +5,7 @@ import json
 
 from flask import Flask, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
-from flasgger import Swagger, swag_from
+from flasgger import Swagger
 
 from mokkigo.constants import LINK_RELATIONS_URL, MASON
 
@@ -31,7 +31,7 @@ def create_app(test_config=None):
             "openapi": "3.0.3",
             "uiversion": 3,
     }
-    swagger = Swagger(app, template_file="doc/mokkigo.yml")
+    Swagger(app, template_file="doc/mokkigo.yml")
 
     if test_config is None:
         app.config.from_pyfile("config.py", silent=True)

@@ -50,7 +50,6 @@ class ParticipantCollection(Resource):
         for participant in participants:
             visit_names = []
             for visit in participant.visits:
-                print("Visit: {}, for participant {}".format(visit.visit_name, participant.name))
                 visit_names.append(visit.visit_name)
 
             p = MokkigoBuilder(
@@ -59,7 +58,8 @@ class ParticipantCollection(Resource):
                 visits=visit_names
             )
 
-            p.add_control("self", url_for("api.participantitem", participant=participant))
+            p.add_control("self", url_for("api.participantitem",
+                                          participant=participant))
             p.add_control("profile", PARTICIPANT_PROFILE)
             body["items"].append(p)
 
@@ -239,6 +239,8 @@ class ParticipantItem(Resource):
                     status_code=409,
                     title="Participant already exists"
             )
+
+        href = url_for("api.participantitem", participant=participant)
         return Response(status=204, headers={"Location": href})
 
     def delete(self, participant):

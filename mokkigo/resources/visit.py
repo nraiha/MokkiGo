@@ -1,4 +1,3 @@
-#from asyncio.windows_events import NULL
 import json
 
 from flask import request, Response, url_for
@@ -58,7 +57,6 @@ class VisitCollection(Resource):
 
         for visit in visits:
             for part in visit.participants:
-                print(part.name)
                 participant_names.append(part.name)
 
             v = MokkigoBuilder(
@@ -69,7 +67,7 @@ class VisitCollection(Resource):
                 participants=participant_names
             )
 
-            participant_names=[]
+            participant_names = []
             v.add_control("self", url_for("api.visititem", visit=visit))
             v.add_control("profile", VISIT_PROFILE)
             body["items"].append(v)
@@ -135,8 +133,8 @@ class VisitCollection(Resource):
             time_end=parser.parse(request.json["time_end"])
         )
 
-        participantNames=request.json["participants"]
-        for name in participantNames:
+        participant_names = request.json["participants"]
+        for name in participant_names:
             participant = Participant.query.filter_by(name=name).first()
             if participant is None:
                 return create_error_response(
@@ -145,9 +143,7 @@ class VisitCollection(Resource):
                     message="No participant with name {} found".format(name)
                 )
 
-            #print("Adding participant: {}".format(name))
             v.participants.append(participant)
-
 
         href = url_for("api.visititem", visit=v)
 

@@ -3,7 +3,6 @@ import click
 from flask.cli import with_appcontext
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
-from datetime import datetime
 
 from dateutil import parser
 
@@ -21,7 +20,8 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 visit_participant_mapping = db.Table(
     "visit_participant_mapping",
     db.Column("visit_id", db.ForeignKey("visit.id"), primary_key=True),
-    db.Column("participant_id", db.ForeignKey("participant.id"), primary_key=True)
+    db.Column("participant_id", db.ForeignKey("participant.id"),
+              primary_key=True)
 )
 
 
@@ -40,12 +40,16 @@ class Visit(db.Model):
     mokki_name = db.Column(db.String(128), nullable=False)
     time_start = db.Column(db.DateTime, nullable=False)
     time_end = db.Column(db.DateTime, nullable=False)
-    participants = db.relationship("Participant", secondary=visit_participant_mapping, back_populates="visits")
+    participants = db.relationship("Participant",
+                                   secondary=visit_participant_mapping,
+                                   back_populates="visits")
 
     def json_schema():
         schema = {
                 "type": "object",
-                "required": ["visit_name", "mokki_name"]
+                "required": ["visit_name", "mokki_name",
+                             "time_start", "time_end"
+                             ]
         }
         props = schema["properties"] = {}
         props["visit_name"] = {
@@ -58,11 +62,13 @@ class Visit(db.Model):
         }
         props["time_start"] = {
                 "description": "Start date of the visit with date-time format",
-                "type": "string"
+                "type": "string",
+                "format": "date-time"
         }
         props["time_end"] = {
                 "description": "End date of the visit with date-time format",
-                "type": "string"
+                "type": "string",
+                "format": "date-time"
         }
         props["participants"] = {
                 "description": "Names of visit participants",
@@ -143,7 +149,8 @@ class Participant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False, unique=True)
     allergies = db.Column(db.String(128))
-    visits = db.relationship("Visit", secondary=visit_participant_mapping, back_populates="participants")
+    visits = db.relationship("Visit", secondary=visit_participant_mapping,
+                             back_populates="participants")
 
     def json_schema():
         schema = {
@@ -157,13 +164,13 @@ class Participant(db.Model):
         }
         props["allergies"] = {
                 "description": "Possible allergies if any",
-                "type":"string"
+                "type": "string"
         }
         props["visits"] = {
                 "description": "List of all the participant's visits",
-                "type":"array",
-                "items": { 
-                        "type":"string"
+                "type": "array",
+                "items": {
+                        "type": "string"
                 }
         }
         return schema
@@ -226,27 +233,27 @@ def init_db_command():
 @click.command("testgen")
 @with_appcontext
 def generate_test_data():
-        v1 = Visit(
-            time_start="2022-06-05T16:25:29+00:00",
-            time_end="2022-06-05T16:25:29+00:00",
-            visit_name="visit1"
-        )
+    v1 = Visit(
+        time_start="2022-06-05T16:25:29+00:00",
+        time_end="2022-06-05T16:25:29+00:00",
+        visit_name="visit1"
+    )
 
-        m1 = Mokki(
-                name="mokki",
-                location="sijainti1"
-        )
+    m1 = Mokki(
+            name="mokki",
+            location="sijainti1"
+    )
 
-        p1 = Participant(
-                name="participant",
-                allergies="food"
-        )
+    p1 = Participant(
+            name="participant",
+            allergies="food"
+    )
 
-        v1.mokki_name=m1.name
-        v1.participants.append(p1)
+    v1.mokki_name = m1.name
+    v1.participants.append(p1)
 
-        db.session.add(p1)
-        db.session.add(m1)
-        db.session.add(v1)
+    db.session.add(p1)
+    db.session.add(m1)
+    db.session.add(v1)
 
-        db.session.commit()
+    db.session.commit()

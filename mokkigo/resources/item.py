@@ -12,7 +12,7 @@ from werkzeug.exceptions import (NotFound)
 
 from mokkigo import db
 from mokkigo.models import Item, Mokki
-from mokkigo.constants import JSON, MASON, LINK_RELATIONS_URL, ITEM_PROFILE
+from mokkigo.constants import JSON, LINK_RELATIONS_URL, ITEM_PROFILE
 from mokkigo.utils import create_error_response, MokkigoBuilder
 
 
@@ -167,7 +167,7 @@ class ItemItem(Resource):
 
         body.add_control("self", url_for("api.itemitem", mokki=mokki, item=i))
         body.add_control("profile", ITEM_PROFILE)
-        body.add_control("collection", url_for("api.itemcollection", 
+        body.add_control("collection", url_for("api.itemcollection",
                                                mokki=mokki))
 
         body.add_control_delete_item(mokki=mokki, item=i)

@@ -1,5 +1,5 @@
 from flask import Blueprint
-from flask_restful import Api, Resource
+from flask_restful import Api
 
 from mokkigo.resources.mokki import MokkiCollection, MokkiItem
 from mokkigo.resources.item import ItemCollection, ItemItem
