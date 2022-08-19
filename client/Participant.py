@@ -52,24 +52,27 @@ class Participant(Menu):
         self.show_res_win("Get a participant")
         part = self.get_input(7, 4, "Give participants name")
 
-        resp = requests.get(self._url + "participants/" + part + '/')
-
         try:
+            resp = requests.get(self._url + "participants/" + part + '/')
+
             body = resp.json()
+            string = self.parse_participant(body)
+            lc = string.count('\n')
+            msg = "Participant: "
+            self.show_res(string, lc, msg)
+
         except ValueError:
             self.show_res("No participant found!", 1, "Oh noes")
             return
-
-        string = self.parse_participant(body)
-        lc = string.count('\n')
-
-        msg = "Participant: "
-        self.show_res(string, lc, msg)
+        except KeyError:
+            return
 
     def post_participant(self):
         self.show_res_win("Post a participant")
         part = self.get_input(7, 4, "Give participant's name")
         allergies = self.get_input(10, 4, "Give allergies")
+        if part == '' or allergies == '':
+            return
 
         data = {
                 "name": part,
@@ -80,6 +83,12 @@ class Participant(Menu):
             r = requests.post(self._url + "participants/",
                               data=json.dumps(data),
                               headers={"Content-type": "application/json"})
+            if r.status_code != 201:
+                msg = str(r.text)
+                err_code = str(r.status_code)
+                lc = msg.count('\n')
+
+                self.show_res(msg, lc, err_code)
 
         except Exception as e:
             e = str(e)
@@ -87,18 +96,13 @@ class Participant(Menu):
             self.show_res(e, lc, "Something went wrong :O")
             return
 
-        if r.status_code != 201:
-            msg = str(r.text)
-            err_code = str(r.status_code)
-            lc = msg.count('\n')
-
-            self.show_res(msg, lc, err_code)
-
     def edit_participant(self):
         self.show_res_win("Edit a participant")
         part = self.get_input(7, 4, "Enter the participant to modify")
         new_part = self.get_input(10, 4, "Enter new name to participiant")
         allergies = self.get_input(13, 4, "Enter new allergies to participant")
+        if part == '' or new_part == '' or allergies == '':
+            return
 
         data = {
                 "name": new_part,
@@ -110,35 +114,36 @@ class Participant(Menu):
                              data=json.dumps(data),
                              headers={"Content-type": "application/json"})
 
+            if r.status_code != 204:
+                msg = str(r.json()['@error']['@message'])
+                err_code = str(r.status_code)
+                lc = msg.count('\n')
+
+                self.show_res(msg, lc, err_code)
+
         except Exception as e:
             e = str(e)
             lc = e.count("\n")
             self.show_res(e, lc, "Something went wrong :O")
             return
-
-        if r.status_code != 204:
-            msg = str(r.json()['@error']['@message'])
-            err_code = str(r.status_code)
-            lc = msg.count('\n')
-
-            self.show_res(msg, lc, err_code)
 
     def delete_participant(self):
         self.show_res_win("Delete a participant")
         part = self.get_input(7, 4, "Enter a participant to be deleted")
         try:
             r = requests.delete(self._url + "participants/{}/".format(part))
+
+            if r.status_code != 204:
+                msg = str(r.json()['@error']['@message'])
+                err_code = str(r.status_code)
+                lc = msg.count('\n')
+                self.show_res(msg, lc, err_code)
+
         except Exception as e:
             e = str(e)
             lc = e.count("\n")
             self.show_res(e, lc, "Something went wrong :O")
             return
-
-        if r.status_code != 204:
-            msg = str(r.json()['@error']['@message'])
-            err_code = str(r.status_code)
-            lc = msg.count('\n')
-            self.show_res(msg, lc, err_code)
 
     def main(self):
         while self.menu(self._items, "Participant Menu"):

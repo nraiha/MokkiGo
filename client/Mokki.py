@@ -52,24 +52,25 @@ class Mokki(Menu):
         self.show_res_win("Get a mokki")
         mokki = self.get_input(7, 4, "Give mokki name")
 
-        resp = requests.get(self._url + "mokkis/" + mokki + '/')
-
         try:
+            resp = requests.get(self._url + "mokkis/" + mokki + '/')
             body = resp.json()
+            string = self.parse_mokki(body)
+            lc = string.count('\n')
+            msg = "Mokki: "
+            self.show_res(string, lc, msg)
         except ValueError:
             self.show_res("No mokki found!", 1, "Oh noes")
             return
-
-        string = self.parse_mokki(body)
-        lc = string.count('\n')
-
-        msg = "Mokki: "
-        self.show_res(string, lc, msg)
+        except KeyError:
+            return
 
     def post_mokki(self):
         self.show_res_win("Post a mokki")
         mokki = self.get_input(7, 4, "Give mokki name")
         location = self.get_input(10, 4, "Give location")
+        if mokki == '' or location == '':
+            return
 
         data = {
                 "name": mokki,
@@ -100,6 +101,9 @@ class Mokki(Menu):
         mokki_new = self.get_input(10, 4, "Enter new name to mokki")
         location = self.get_input(13, 4, "Enter new location to mokki")
 
+        if mokki == '' or mokki_new == '' or location == '':
+            return
+
         data = {
                 "name": mokki_new,
                 "location": location
@@ -110,35 +114,37 @@ class Mokki(Menu):
                              data=json.dumps(data),
                              headers={"Content-type": "application/json"})
 
+            if r.status_code != 204:
+                try:
+                    msg = str(r.json()['@error']['@message'])
+                except Exception:
+                    msg = str(r.text)
+                err_code = str(r.status_code)
+                lc = msg.count('\n')
+
+            self.show_res(msg, lc, err_code)
         except Exception as e:
             e = str(e)
             lc = e.count("\n")
             self.show_res(e, lc, "Something went wrong :O")
-            return
-
-        if r.status_code != 204:
-            msg = str(r.json()['@error']['@message'])
-            err_code = str(r.status_code)
-            lc = msg.count('\n')
-
-            self.show_res(msg, lc, err_code)
 
     def delete_mokki(self):
         self.show_res_win("Delete a mokki")
         mokki = self.get_input(7, 4, "Enter a mokki to be deleted")
+        if mokki == '':
+            return
         try:
             r = requests.delete(self._url + "mokkis/{}/".format(mokki))
+            if r.status_code != 204:
+                msg = str(r.json()['@error']['@message'])
+                err_code = str(r.status_code)
+                lc = msg.count('\n')
+                self.show_res(msg, lc, err_code)
         except Exception as e:
             e = str(e)
             lc = e.count("\n")
             self.show_res(e, lc, "Something went wrong :O")
             return
-
-        if r.status_code != 204:
-            msg = str(r.json()['@error']['@message'])
-            err_code = str(r.status_code)
-            lc = msg.count('\n')
-            self.show_res(msg, lc, err_code)
 
     def main(self):
         while self.menu(self._items, "Mokki Menu"):

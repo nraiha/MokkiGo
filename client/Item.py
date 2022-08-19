@@ -75,6 +75,8 @@ class Item(Menu):
         mokki = self.get_input(7, 4, "Give name of the mokki")
         item = self.get_input(10, 4, "Give item name")
         amount = self.get_input(13, 4, "Give amount")
+        if mokki == '' or item == '' or amount == '':
+            return
 
         data = {
                 "name": item,
@@ -86,18 +88,17 @@ class Item(Menu):
                               data=json.dumps(data),
                               headers={"Content-type": "application/json"})
 
+            if r.status_code != 201:
+                msg = str(r.json()['@error']['@message'])
+                err_code = str(r.status_code)
+                lc = msg.count('\n')
+
+                self.show_res(msg, lc, err_code)
         except Exception as e:
             e = str(e)
             lc = e.count("\n")
             self.show_res(e, lc, "Something went wrong :O")
             return
-
-        if r.status_code != 201:
-            msg = str(r.json()['@error']['@message'])
-            err_code = str(r.status_code)
-            lc = msg.count('\n')
-
-            self.show_res(msg, lc, err_code)
 
     def edit_item(self):
         self.show_res_win("Edit item")
@@ -105,6 +106,8 @@ class Item(Menu):
         item = self.get_input(10, 4, "Enter the item to modify")
         new_item = self.get_input(13, 4, "Enter new name to item")
         amount = self.get_input(16, 4, "Enter new amount to item")
+        if item == '' or mokki == '' or new_item =='' or amount == '':
+            return
 
         data = {
                 "name": new_item,
@@ -117,37 +120,41 @@ class Item(Menu):
                              data=json.dumps(data),
                              headers={"Content-type": "application/json"})
 
+            if r.status_code != 204:
+                msg = str(r.json()['@error']['@message'])
+                err_code = str(r.status_code)
+                lc = msg.count('\n')
+
+                self.show_res(msg, lc, err_code)
+
         except Exception as e:
             e = str(e)
             lc = e.count("\n")
             self.show_res(e, lc, "Something went wrong :O")
             return
-
-        if r.status_code != 204:
-            msg = str(r.json()['@error']['@message'])
-            err_code = str(r.status_code)
-            lc = msg.count('\n')
-
-            self.show_res(msg, lc, err_code)
 
     def delete_item(self):
         self.show_res_win("Delete item")
         mokki = self.get_input(7, 4, "Enter the name of the mokki")
         item = self.get_input(10, 4, "Enter an item to be deleted")
+        if mokki == '':
+            return
+        if item == '':
+            return
         try:
             url = self._url + 'mokkis/' + mokki + '/items/' + item + '/'
             r = requests.delete(url)
+
+            if r.status_code != 204:
+                msg = str(r.json()['@error']['@message'])
+                err_code = str(r.status_code)
+                lc = msg.count('\n')
+                self.show_res(msg, lc, err_code)
         except Exception as e:
             e = str(e)
             lc = e.count("\n")
             self.show_res(e, lc, "Something went wrong :O")
             return
-
-        if r.status_code != 204:
-            msg = str(r.json()['@error']['@message'])
-            err_code = str(r.status_code)
-            lc = msg.count('\n')
-            self.show_res(msg, lc, err_code)
 
     def main(self):
         while self.menu(self._items, "Item Menu"):

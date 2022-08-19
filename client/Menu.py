@@ -31,9 +31,11 @@ class Menu:
         self._screen.addstr(y, x, prompt)
         self._screen.addstr(y+1, x, "> ")
         self._screen.refresh()
-        visit = self._screen.getstr(y+1, x+2, 80)
+        i = self._screen.getstr(y+1, x+2, 80)
+        if i == b'\x03':
+            return ''
         curses.noecho()
-        return visit.decode()
+        return i.decode()
 
     def show_res_win(self, string):
         self._res_win.erase()
