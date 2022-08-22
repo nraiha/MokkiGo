@@ -89,7 +89,7 @@ class ItemCollection(Resource):
                     type: string
             '400':
               description: The request body was not valid
-            '404:
+            '404':
               description: Mokki was not found
             '409':
               description: A item with the same name already exists

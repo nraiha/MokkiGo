@@ -184,11 +184,12 @@ class ParticipantItem(Resource):
         requestBody:
           description: JSON document that contains new data for participant
           content:
-            application/json: schema:
-                $ref: '#/components/schemas/Participant'
-              example:
-                name: jugioh
-                allergies: plants
+            application/json:
+                schema:
+                    $ref: '#/components/schemas/Participant'
+                example:
+                    name: jugioh
+                    allergies: plants
         responses:
           '204':
             description: The participant was updated successfully
