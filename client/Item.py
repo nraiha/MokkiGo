@@ -38,17 +38,20 @@ class Item(Menu):
         resp = requests.get(self._url + 'mokkis/' + mokki + "/items/")
         try:
             body = resp.json()
+
+            data = body['items']
+            string = ''
+            for item in data:
+                string += self.parse_item(item)
+            lc = string.count('\n')
+            msg = 'Result of the get /items/'
+            self.show_res(string, lc, msg)
         except ValueError:
             self.show_res("No items found!", 1, "Oh noes")
             return
-
-        data = body['items']
-        string = ''
-        for item in data:
-            string += self.parse_item(item)
-        lc = string.count('\n')
-        msg = 'Result of the get /items/'
-        self.show_res(string, lc, msg)
+        except KeyError:
+            self.show_res("No items found!", 1, "Oh noes")
+            return
 
     def get_item(self):
         self.show_res_win("Get an item")

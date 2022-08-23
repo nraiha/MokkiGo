@@ -33,20 +33,22 @@ class Participant(Menu):
     #
     #
     def get_all_participants(self):
-        resp = requests.get(self._url + "participants/")
         try:
+            resp = requests.get(self._url + "participants/")
             body = resp.json()
+
+            data = body['items']
+            string = ''
+            for item in data:
+                string += self.parse_participant(item)
+            lc = string.count('\n')
+            msg = 'Result of the get /participants/'
+            self.show_res(string, lc, msg)
+        except KeyError:
+            self.show_res("No participants found!", 1, "Oh noes")
         except ValueError:
             self.show_res("No participants found!", 1, "Oh noes")
             return
-
-        data = body['items']
-        string = ''
-        for item in data:
-            string += self.parse_participant(item)
-        lc = string.count('\n')
-        msg = 'Result of the get /participants/'
-        self.show_res(string, lc, msg)
 
     def get_participant(self):
         self.show_res_win("Get a participant")

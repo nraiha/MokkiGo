@@ -40,24 +40,27 @@ class Visit(Menu):
     #
     #
     def get_all_visits(self):
-        resp = requests.get(self._url + "visits/")
         try:
+            resp = requests.get(self._url + "visits/")
             body = resp.json()
+
+            data = body["items"]
+            string = ''
+            for item in data:
+                string += self.parse_visit(item)
+            lc = string.count('\n')
+
+            msg = "Result of the get /visits/"
+            self.show_res(string, lc, msg)
         except ValueError:
+            self.show_res("No visits found!", 1, "Oh noes")
+            return
+        except KeyError:
             self.show_res("No visits found!", 1, "Oh noes")
             return
         except ConnectionError:
             self.show_res("No active server found!", 1, "Oh noes")
             return
-
-        data = body["items"]
-        string = ''
-        for item in data:
-            string += self.parse_visit(item)
-        lc = string.count('\n')
-
-        msg = "Result of the get /visits/"
-        self.show_res(string, lc, msg)
 
     def get_visit(self):
         self.show_res_win("Get a visit")
