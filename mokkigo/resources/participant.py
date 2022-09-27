@@ -147,12 +147,21 @@ class ParticipantItem(Resource):
         OpenAPI description below:
         ---
         description: Get details of one participant
+        parameters:
+          - in: path
+            name: participant
+            schema:
+              type: string
+            required: true
+            description: name of the participant
+            example:
+              "Jane Doe"
         responses:
           '200':
             description: Data of the single participant
             content:
               application/json:
-                examples:
+                example:
                   name: "Jane Doe"
           '404':
             description: The participant was not found
@@ -181,6 +190,15 @@ class ParticipantItem(Resource):
         OpenAPI description below:
         ---
         description: Edit one participant
+        parameters:
+          - in: path
+            name: participant
+            schema:
+              type: string
+            required: true
+            description: name of the participant
+            example:
+              "Jane Doe"
         requestBody:
           description: JSON document that contains new data for participant
           content:
@@ -238,6 +256,16 @@ class ParticipantItem(Resource):
         OpenAPI description below:
         ---
         description: Delete selected participant
+        parameters:
+          - in: path
+            name: participant
+            schema:
+              type: string
+            required: true
+            description: name of the participant
+            example:
+              name: Jane Doe
+              allergies: Carrots
         responses:
           '204':
             description: Participant deleted successfully

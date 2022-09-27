@@ -1,7 +1,7 @@
 ---
 openapi: 3.0.3
 servers:
-- url: /api
+- url: /
 components:
   parameters:
     participant:

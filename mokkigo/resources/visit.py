@@ -88,10 +88,11 @@ class VisitCollection(Resource):
               schema:
                 $ref: '#/components/schemas/Visit'
               example:
-                name: Weekend in the Ii
-                time_start: 2022-06-05T16:25:29+00:00
-                time_end: 2022-06-05T16:25:30+00:00
+                visit_name: Weekend in the Ii
+                time_start: "2022-06-05T16:25:29"
+                time_end: "2022-06-03T16:25:29"
                 mokki_name: Ii-mokki
+                participants: ["test"]
         responses:
           '201':
             description: Visit was created successfully
@@ -138,7 +139,8 @@ class VisitCollection(Resource):
             participant_names = request.json["participants"]
             for name in participant_names:
                 participant = Participant.query.filter_by(name=name).first()
-                v.participants.append(participant)
+                if participant is not None:
+                    v.participants.append(participant)
 
             href = url_for("api.visititem", visit=v)
 
@@ -161,16 +163,26 @@ class VisitItem(Resource):
         OpenAPI description below:
         ---
         description: Get details of one visit
+        parameters:
+          - in: path
+            name: visit
+            schema:
+              type: string
+            required: true
+            description: name of the visit
+            example:
+              Weekend in the Ii
         responses:
           '200':
             description: Data of the single visit
             content:
               application/json:
-                examples:
+                example:
                   visit_name: Weekend in the Ii
-                  time_start: 1990-01-01T00:02:02.003+1:00
-                  time_end: 1990-01-03T00:02:02.003+1:00
+                  time_start: "1990-01-01T00:02:02"
+                  time_end: "1990-01-03T00:02:02.00"
                   mokki_name: Ii-mokki
+                  participants: ["test"]
           '404':
             description: The visit was not found
         """
@@ -204,6 +216,15 @@ class VisitItem(Resource):
         OpenAPI description below:
         ---
         description: Edit one visit
+        parameters:
+          - in: path
+            name: visit
+            schema:
+              type: string
+            required: true
+            description: name of the visit
+            example:
+              Weekend in the Ii
         requestBody:
           description: JSON document that contains new data for visit
           content:
@@ -211,8 +232,11 @@ class VisitItem(Resource):
               schema:
                 $ref: '#/components/schemas/Visit'
               example:
-                name: jugioh
-                allergies: plants
+                visit_name: Weekend in the Ii
+                time_start: "1990-01-01T00:02:02"
+                time_end: "1990-01-03T00:02:02"
+                mokki_name: Ii-mokki
+                participants: ["test"]
         responses:
           '204':
             description: The visit was updated successfully
@@ -259,6 +283,15 @@ class VisitItem(Resource):
         OpenAPI description below:
         ---
         description: Delete selected visit
+        parameters:
+          - in: path
+            name: visit
+            schema:
+              type: string
+            required: true
+            description: name of the visit
+            example:
+              Weekend in the Ii
         responses:
           '204':
             description: visit deleted successfully

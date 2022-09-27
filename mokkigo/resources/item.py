@@ -21,6 +21,15 @@ class ItemCollection(Resource):
         OpenAPI Description below:
         ---
         description: Get the list of items
+        parameters:
+          - in: path
+            name: mokki
+            schema:
+              type: string
+            required: true
+            description: name of the mokki
+            example:
+              Ii-mokki
         responses:
           '200':
             description: List of items
@@ -28,9 +37,9 @@ class ItemCollection(Resource):
               application/json:
                 example:
                 - name: item1
-                  amount: 3
+                  amount: "3"
                 - name: item2
-                  amount: 5
+                  amount: "5"
         """
         db_mokki = Mokki.query.filter_by(name=mokki.name).first()
 
@@ -70,6 +79,15 @@ class ItemCollection(Resource):
         OpenAPI description below:
         ---
         description: create new item
+        parameters:
+          - in: path
+            name: mokki
+            schema:
+              type: string
+            required: true
+            description: name of the mokki
+            example:
+              Ii-mokki
         requestBody:
           description: JSON document that contains basic data for a new item
           content:
@@ -77,24 +95,19 @@ class ItemCollection(Resource):
               schema:
                 $ref: '#/components/schemas/Item'
               example:
-                name: item1
-                amount: 1.0
-          responses:
-            '200':
-              description: Item was created successfully
-              headers:
-                Location:
-                  description: URI of the new Item
-                  schema:
-                    type: string
-            '400':
-              description: The request body was not valid
-            '404':
-              description: Mokki was not found
-            '409':
-              description: A item with the same name already exists
-            '415':
-              description: Wrong media type was used
+                name: carrot
+                amount: "1.0"
+        responses:
+          '201':
+            description: Item was created successfully
+          '400':
+            description: The request body was not valid
+          '404':
+            description: Mokki was not found
+          '409':
+            description: A item with the same name already exists
+          '415':
+            description: Wrong media type was used
         """
         if request.mimetype != JSON:
             return create_error_response(
@@ -143,14 +156,31 @@ class ItemItem(Resource):
         OpenAPI description below:
         ---
         description: Get details of one item
+        parameters:
+          - in: path
+            name: mokki
+            schema:
+              type: string
+            required: true
+            description: name of the mokki
+            example:
+              Ii-mokki
+          - in: path
+            name: item
+            schema:
+              type: string
+            required: true
+            description: name of the item
+            example:
+              carrot
         responses:
           '200':
             description: Data of a single item
             content:
               application/json:
-                examples:
+                example:
                   name: carrot
-                  amount: 3
+                  amount: "3"
           '404':
             description: Item not found
         """
@@ -179,13 +209,32 @@ class ItemItem(Resource):
         OpenAPI description below:
         ---
         description: JSON document that contains new data for Item
-        content:
-          application/json:
+        parameters:
+          - in: path
+            name: mokki
             schema:
-              $ref: '#/components/schemas/Item'
+              type: string
+            required: true
+            description: name of the mokki
             example:
-              name: Pear
-              amount: 0
+              Ii-mokki
+          - in: path
+            name: item
+            schema:
+              type: string
+            required: true
+            description: name of the item
+            example:
+              carrot
+        requestBody:
+          description: JSON document that contains new data for item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+              example:
+                name: Pear
+                amount: "0"
         responses:
           '204':
             description: The item's attributes were updated successfully
@@ -237,6 +286,23 @@ class ItemItem(Resource):
         OpenAPI description below:
         ---
         description: Delete selected item
+        parameters:
+          - in: path
+            name: mokki
+            schema:
+              type: string
+            required: true
+            description: name of the mokki
+            example:
+              Ii-mokki
+          - in: path
+            name: item
+            schema:
+              type: string
+            required: true
+            description: name of the item
+            example:
+              carrot
         responses:
           '204':
             description: Item deleted successfully

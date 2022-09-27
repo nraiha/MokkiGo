@@ -66,9 +66,9 @@ def create_app(test_config=None):
     #     # TODO: meaningful function
     #     return "Request profile {}".format(profile)
 
-    # @app.route(LINK_RELATIONS_URL)
-    # def send_link_relations():
-    #     return "link relations"
+    @app.route(LINK_RELATIONS_URL)
+    def send_link_relations():
+        return "link relations"  # pragma: no coverity
 
     @app.route("/api/")
     def index():

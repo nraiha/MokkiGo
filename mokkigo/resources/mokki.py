@@ -128,12 +128,21 @@ class MokkiItem(Resource):
         OpenAPI description below:
         ---
         description: Get details of one mokki
+        parameters:
+          - in: path
+            name: mokki
+            schema:
+              type: string
+            required: true
+            description: name of the mokki
+            example:
+              Ii-mokki
         responses:
           '200':
             description: Data of the single mokki
             content:
               application/json:
-                examples:
+                example:
                   name: Ii-mokki
                   location: Ii
           '404':
@@ -172,6 +181,15 @@ class MokkiItem(Resource):
         OpenAPI description below:
         ---
         description: Edit one mokki
+        parameters:
+          - in: path
+            name: mokki
+            schema:
+              type: string
+            required: true
+            description: name of the mokki
+            example:
+              Ii-mokki
         requestBody:
           description: JSON document that contains new data for mokki
           content:
@@ -179,7 +197,7 @@ class MokkiItem(Resource):
               schema:
                 $ref: '#/components/schemas/Mokki'
               example:
-                name: Ii-mokki
+                name: Ii-mokki-put
                 location: Kuivaniemi
         responses:
           '204':
@@ -227,6 +245,23 @@ class MokkiItem(Resource):
         OpenAPI description below:
         ---
         description: Delete selected mokki
+        parameters:
+          - in: path
+            name: mokki
+            schema:
+              type: string
+            required: true
+            description: name of the mokki
+            example:
+              Ii-mokki
+        requestBody:
+          description: JSON document with a mokkis name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mokki'
+              example:
+                name: Ii-mokki
         responses:
           '204':
             description: Mokki deleted successfully
