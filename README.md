@@ -3,9 +3,11 @@
 * Student 1. Laura Punkeri
 * Student 2. Nuutti Räihä
 
-Note: if using older versions of flask, replace FLASK_DEBUG=1 with FLASK_ENV=development
+
 
 # Running API
+
+Note: if using older versions of flask, replace FLASK_DEBUG=1 with FLASK_ENV=development
 
 	Go to root folder /path/to/dir/MokkiGo <br>
 	export FLASK_APP=mokkigo <br>
