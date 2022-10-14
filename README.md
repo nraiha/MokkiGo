@@ -4,12 +4,15 @@
 * Student 2. Nuutti Räihä
 
 
-
 # Running API
 
 To install the dependencies:
 
 	python3 -m pip install -r requirements.txt
+	
+OR to setup
+
+	python3 -m pip install .
 
 Note: if using older versions of flask, replace FLASK_DEBUG=1 with FLASK_ENV=development
 
