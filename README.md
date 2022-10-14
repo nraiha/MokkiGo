@@ -7,6 +7,10 @@
 
 # Running API
 
+To install the dependencies:
+
+	python3 -m pip install -r requirements.txt
+
 Note: if using older versions of flask, replace FLASK_DEBUG=1 with FLASK_ENV=development
 
 	Go to root directory /path/to/dir/MokkiGo <br>
