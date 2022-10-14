@@ -9,7 +9,7 @@
 
 Note: if using older versions of flask, replace FLASK_DEBUG=1 with FLASK_ENV=development
 
-	Go to root folder /path/to/dir/MokkiGo <br>
+	Go to root directory /path/to/dir/MokkiGo <br>
 	export FLASK_APP=mokkigo <br>
 	export FLASK_DEBUG=1 <br>
 	flask init-db
@@ -25,9 +25,10 @@ OR
 
 	./mokkigo.sh init run
 
-# Running tests:
+# Running tests
 pytest --cov-report term-missing --cov=mokkigo
 
+# Running client
 
-
-
+	Go to the client directory in MokkiGo
+	python3 Client.py
