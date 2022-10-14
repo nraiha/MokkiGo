@@ -9,9 +9,11 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        'flasgger',
         'flask',
         'flask-restful',
         'flask-sqlalchemy',
+        'python-dateutil',
         'SQLAlchemy'
     ]
 )
